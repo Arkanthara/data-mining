@@ -8,8 +8,6 @@ features = data[1:, :-1]
 labels = data[1:, -1]
 model = bayes.Bayes()
 
-print(model.string_to_num(features).dtype)
-
-print(len(labels.shape))
-
 model.fit(features, labels)
+print(model.prior_y)
+print(model.predict(features) - model.string_to_num(labels))
