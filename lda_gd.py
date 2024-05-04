@@ -26,3 +26,25 @@ class LDAGD(LDA):
         None
         """
 
+        h = 1
+
+        alpha = 1
+
+        w = np.random.random((X.shape[1], h))
+
+        SW, SB = self.calculate_scatter_matrices(X, y)
+
+        J = lambda w: np.abs(w.T @ SW @ w)/np.abs(w.T @ SB @ w)
+
+        for i in range(iterations):
+
+            J = np.abs(w.T @ SW @ w)/np.abs(w.T @ SB @ w)
+
+            w -= alpha * 2 * J * (
+                    SW @ w @ np.linalg.inv(w.T @ SW @ w)
+                  - SB @ w @ np.linalg.inv(w.T @ SB @ w))
+
+            for j in range(h):
+                w[:, j] /= np.linalg.norm(w[:, j])
+
+        self.linear_discriminants = w

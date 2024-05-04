@@ -111,8 +111,6 @@ class LDA:
         predictions : array, shape = [self.n_components]
             Projections of input samples using the linear discriminants in `self.linear_discriminants`.
         """
-        print(f"X.shape: {X.shape}")
-        print(f"shape: {(X @ self.linear_discriminants).shape}")
         return X @ self.linear_discriminants
 
     def predict(self, X):
@@ -148,13 +146,12 @@ class LDA:
         M = (self.means[0] + self.means[1]) / 2
 
         threshold = self.transform(M)
-
-        predictions = self.transform(X)
+        
+        # I add [:, 0] to convert 2D vector of size num_samples, 1 to 1D array
+        predictions = self.transform(X)[:, 0]
 
         predictions[predictions > threshold] = 1
         predictions[predictions <= threshold] = 0
-
-        print(predictions)
 
         return predictions
 
