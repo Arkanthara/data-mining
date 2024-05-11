@@ -59,9 +59,5 @@ def compute_accuracy(y_true, y_pred):
     # use only numpy functions                                       #
     ##################################################################
 
-    tmp = np.zeros(len(y_true))
-
-    tmp[y_true == y_pred] = 1
-
-    return tmp.sum() / len(y_true)
+    return (y_true == y_pred).sum() / len(y_true)
 

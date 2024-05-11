@@ -28,7 +28,6 @@ class LDARayleigh(LDA):
 
         SW, SB = self.calculate_scatter_matrices(X, y)
 
-        w = np.reshape(np.linalg.inv(SW) @ (self.means[0] - self.means[1]), (-1, 1))
+        w = (np.linalg.inv(SW) @ (self.means[1] - self.means[0]))[:, None]
 
         self.linear_discriminants = w
-

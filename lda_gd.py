@@ -28,17 +28,18 @@ class LDAGD(LDA):
 
         h = 1
 
-        alpha = 1
+        alpha = 0.1
 
-        w = np.random.random((X.shape[1], h))
+        #w = np.random.random((X.shape[1], h))
+
+        w = np.zeros((X.shape[1], h))
+        w[0] = 1
 
         SW, SB = self.calculate_scatter_matrices(X, y)
 
-        J = lambda w: np.abs(w.T @ SW @ w)/np.abs(w.T @ SB @ w)
-
         for i in range(iterations):
 
-            J = np.abs(w.T @ SW @ w)/np.abs(w.T @ SB @ w)
+            J = np.linalg.det(w.T @ SW @ w)/np.linalg.det(w.T @ SB @ w)
 
             w -= alpha * 2 * J * (
                     SW @ w @ np.linalg.inv(w.T @ SW @ w)

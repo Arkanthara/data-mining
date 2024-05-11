@@ -74,6 +74,8 @@ class LDA:
             if add_means:
                 self.means.append(np.mean(X_ci, axis=0))
             SW += (X_ci - self.means[i]).T @ (X_ci - self.means[i])
+            #for x in X_ci:
+            #    SW += (x - self.means[i])[:, None] @ (x - self.means[i])[:, None].T
         
         SB = (self.means[0] - self.means[1])[:, None] @ (self.means[0] - self.means[1])[:, None].T
         
@@ -165,6 +167,27 @@ class LDA:
 
         assert self.n_components == 1
 
+        values = np.unique(y)
+
+        plt.figure()
+        plt.title(title)
+
+        for i in values:
+            X_i = X[y == i]
+            projection = self.transform(X_i)[:, 0]
+            plt.plot(projection, np.zeros_like(projection), label="class " + str(i))
+
+        M = (self.means[0] + self.means[1]) / 2
+
+        threshold = self.transform(M)
+
+        plt.plot(threshold, 0, 'ro', label="threshold")
+
+        plt.legend()
+        plt.show()
+
+
+
     def plot_2d(self, X, y, title=None):
         """ Plot the dataset X and the corresponding labels y in 2D using the LDA
         transformation.
@@ -172,4 +195,19 @@ class LDA:
         """
 
         assert self.n_components == 2
+
+        values = np.unique(y)
+
+        plt.figure()
+
+        plt.title(title)
+
+        for i in values:
+            X_i = X[y == i]
+            projection = self.transform(X_i)[:, 0]
+            plt.plot(projection, np.zeros_like(projection) + i, label="class " + str(i))
+
+        plt.legend()
+        plt.show()
+
 
