@@ -30,7 +30,7 @@ class LDAGD(LDA):
         h = self.n_components
 
         # We define the learning rate
-        alpha = 1
+        alpha = 0.01
 
         # We initialize w as [Identity | 0 ... 0 ].T
         w = np.eye(X.shape[1], h)
