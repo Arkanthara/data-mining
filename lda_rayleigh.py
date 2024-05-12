@@ -26,8 +26,19 @@ class LDARayleigh(LDA):
         None
         """
 
+        # We get the number of classes - 1
+        h = self.n_components
+
+        # We get SW and SB matrix
         SW, SB = self.calculate_scatter_matrices(X, y)
 
-        w = (np.linalg.inv(SW) @ (self.means[1] - self.means[0]))[:, None]
+        # We initialise w
+        w = np.zeros((X.shape[1], h))
 
+        for i in range(h):
+
+            # We compute w[i] for each i in h (w is of size dxh)
+            w[:, i] = (np.linalg.inv(SW) @ (self.means[i + 1] - self.means[i]))
+
+        # We replace self.linear_discriminants by the value obtained
         self.linear_discriminants = w

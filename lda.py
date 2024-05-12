@@ -40,8 +40,8 @@ class LDA:
         None
         """
 
+        # We compute the discriminant. So the field self.linear_discriminant is completed
         self._calculate_discriminants(X, y)
-        self.discriminants = self.linear_discriminants
 
 
     def calculate_scatter_matrices(self, X, y):
@@ -64,20 +64,45 @@ class LDA:
             SB : array-like, shape: [n_features, n_features]
         """
 
-        classes = np.unique(y)
+        # We define h = number of classes - 1
+        h = self.n_components
+
+        # We get all the classes, and we sort then in decrease order
+        # to have same results between raleigh method and gd method...
+        # In fact, in gd method, we have alway class 1 before class 0, so I invert the classes
+        # to have also in raleigh method the class 1 before class 0...
+        classes = np.sort(np.unique(y))[::-1]
+
+        # We initialise matrix SW and SB
         SW = np.zeros((X.shape[1], X.shape[1]))
+        SB = np.zeros((X.shape[1], X.shape[1]))
+
+        # Here we define a variable to detect if we have already compute the means
         add_means = False
         if len(self.means) == 0:
             add_means = True
-        for i in range(len(classes)):
+
+        # We iterate on each classes (so on h + 1)
+        for i in range(h + 1):
+
+            # This give us only the datas where the label is equal to the current class
             X_ci = X[y == classes[i]]
+
+            # If we didn't compute the means, we compute and add the means to self.means
             if add_means:
                 self.means.append(np.mean(X_ci, axis=0))
+
+            # Then, we compute SW
             SW += (X_ci - self.means[i]).T @ (X_ci - self.means[i])
-            #for x in X_ci:
-            #    SW += (x - self.means[i])[:, None] @ (x - self.means[i])[:, None].T
         
-        SB = (self.means[0] - self.means[1])[:, None] @ (self.means[0] - self.means[1])[:, None].T
+        # We iterate on each h
+        for i in range(h):
+
+            # It's to compare each class to each other classes
+            for j in range(i + 1, h):
+
+                # We compute SB
+                SB += (self.means[i] - self.means[i + j]).reshape(-1, 1) @ (self.means[i] - self.means[i + j]).reshape(1, -1)
         
         return SW, SB
 
@@ -113,6 +138,8 @@ class LDA:
         predictions : array, shape = [self.n_components]
             Projections of input samples using the linear discriminants in `self.linear_discriminants`.
         """
+
+        # We make a projection transformation thanks to the linear_discriminant computed before
         return X @ self.linear_discriminants
 
     def predict(self, X):
@@ -145,15 +172,18 @@ class LDA:
         # as this is binary classificatio.
         assert len(self.means) == 2
 
+        # We compute M used to obtain threshold
         M = (self.means[0] + self.means[1]) / 2
 
+        # We compute threshold
         threshold = self.transform(M)
         
         # I add [:, 0] to convert 2D vector of size num_samples, 1 to 1D array
         predictions = self.transform(X)[:, 0]
 
-        predictions[predictions > threshold] = 1
-        predictions[predictions <= threshold] = 0
+        # We make predictions. Note that here, we have inverted the order of the prediction
+        predictions[predictions > threshold] = 0
+        predictions[predictions <= threshold] = 1
 
         return predictions
 
@@ -167,20 +197,32 @@ class LDA:
 
         assert self.n_components == 1
 
+        # We get all classes
         values = np.unique(y)
 
+        # Plot figure
         plt.figure()
         plt.title(title)
 
+        # We iterate on each class
         for i in values:
+
+            # We take only the datas which are in the class
             X_i = X[y == i]
+
+            # We project this datas thanks to the linear discriminant
             projection = self.transform(X_i)[:, 0]
+
+            # We plot the datas projected
             plt.plot(projection, np.zeros_like(projection), label="class " + str(i))
 
+        # This is just used to plot the threshold
         M = (self.means[0] + self.means[1]) / 2
 
+        # We compute threshold thanks to M
         threshold = self.transform(M)
 
+        # We plot threshold
         plt.plot(threshold, 0, 'ro', label="threshold")
 
         plt.legend()
@@ -196,16 +238,24 @@ class LDA:
 
         assert self.n_components == 2
 
+        # We take all the classes
         values = np.unique(y)
 
         plt.figure()
 
         plt.title(title)
 
+        # For each classes
         for i in values:
+
+            # We take the datas which are in this class
             X_i = X[y == i]
-            projection = self.transform(X_i)[:, 0]
-            plt.plot(projection, np.zeros_like(projection) + i, label="class " + str(i))
+
+            # We project the data thanks to the linear discriminant
+            projection = self.transform(X_i)
+
+            # We print our data projected
+            plt.plot(projection[:, 0], projection[:, 1], 'o', label="class " + str(i))
 
         plt.legend()
         plt.show()

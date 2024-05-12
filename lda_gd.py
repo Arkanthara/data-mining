@@ -26,26 +26,41 @@ class LDAGD(LDA):
         None
         """
 
-        h = 1
+        # We take the number of classes - 1
+        h = self.n_components
 
-        alpha = 0.1
+        # We define the learning rate
+        alpha = 1
 
-        #w = np.random.random((X.shape[1], h))
+        # We initialize w as [Identity | 0 ... 0 ].T
+        w = np.eye(X.shape[1], h)
 
-        w = np.zeros((X.shape[1], h))
-        w[0] = 1
+        # We define a lambda function to avoid division by 0
+        divide = lambda p, q: p/q if q != 0 else 0
 
+        # We get SW and SB
         SW, SB = self.calculate_scatter_matrices(X, y)
 
+        # We iterate
         for i in range(iterations):
-
-            J = np.linalg.det(w.T @ SW @ w)/np.linalg.det(w.T @ SB @ w)
-
-            w -= alpha * 2 * J * (
+            
+            # We compute J
+            J = divide(np.linalg.det(w.T @ SW @ w), np.linalg.det(w.T @ SB @ w))
+            
+            # We verify if J = 0.
+            # If J = 0, it means that for instante, np.linalg.det(w.T @ SB @ w) = 0 so that w.T @ SB @ w is not invertible
+            # I use this because else, I have numpy exceptions...
+            # Then we compute the gradient descent
+            if J != 0:
+                w -= alpha * 2 * J * (
                     SW @ w @ np.linalg.inv(w.T @ SW @ w)
                   - SB @ w @ np.linalg.inv(w.T @ SB @ w))
-
+            else: 
+                w -= 0
+            
+            # We normalise w
             for j in range(h):
                 w[:, j] /= np.linalg.norm(w[:, j])
 
+        # We replace the linear discriminant by the value computed
         self.linear_discriminants = w

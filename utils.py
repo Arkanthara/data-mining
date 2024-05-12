@@ -59,5 +59,6 @@ def compute_accuracy(y_true, y_pred):
     # use only numpy functions                                       #
     ##################################################################
 
+    # We return the number of right predictions divided by the number of predictions
     return (y_true == y_pred).sum() / len(y_true)
 
