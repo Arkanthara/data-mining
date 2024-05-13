@@ -4,7 +4,7 @@ author: Michel Jean Joseph Donnet
 date: \today
 ---
 
-# Besoin de normalisation des données ????
+\newpage
 
 # Introduction
 
@@ -16,35 +16,34 @@ So in this work, we want to implement 2 ways to implement the LDA method: the Ra
 
 The Linear Discriminant method is a way to classify two classes $c_1$ and $c_2$:
 
-We have $h + 1$ classes and we want to class some datas in theses classes thanks to a set of features.
+We have $h$ classes and we want to class some datas in theses classes thanks to a set of features.
 To do that, we want to find an optimal transformation to map all the elements of the classes on an hyperplane, and separe then thanks to a threshold which split the classes.
 
 So we have a dataset $X$ of dimensions $(n, d)$ ($n$: number of lines, $d$: number of features)
 
-We want to find an optimal $w$ (of dimension $(d, h)$, with $h = \text{number of classes} - 1$) to map all the datas on a hyperplane. The $w$ is optimal if the classes are well separated.
+We want to find an optimal $w$ (of dimension $(d, h - 1)$, with $h = \text{number of classes}$) to map all the datas on a hyperplane. The $w$ is optimal if the classes are well separated.
 
-To map the datas on the hyperplane, we apply $X \cdot w$, and then we have only a dataset of dimension $n, h$.
+To map the datas on the hyperplane, we apply $X \cdot w$, and then we have only a dataset of dimension $n, h - 1$.
 
 And then, we just have to find a threshold to separe classes.
 
 So we want to find an optimal $w$ to map our dataset.
 
-We note $\bar{x}$ the data $x$ projected and $\bar{\mu}$ the mean of the $\bar{x}$
+We note $\bar{x}$ the data $x$ projected, $\bar{\mu_i}$ the mean of all the projected elements of the class $i$ and $N_i$ the number of elements in the class $i$.
+We note $\bar{\mu}$ the mean overall and $\mu_i$ the mean of the class $i$. 
 
 We want to maximise the distance between each mean of classes and the overall mean of the datas, and we want that if a class is small, it influences a few the result whereas if a class is with a lot of datas, it influences a lot the result.
-So we have:
+So we have: (note that the $N_i$ here allow us to give more importance to classes with more items)
 
-$$
 \begin{align}
-\sum_i^{h + 1} N_i(\bar{\mu_i} - \bar{\mu})^2
-&= \sum_i^{h + 1} N_i \left(\frac{1}{n_i}\sum_{x \in c_i} w^Tx - \frac{1}{n}\sum w^Ty \right)^2 & \text{The } N_i \text{here allow us to give more importance to big classes}\\
-&= \sum_i^{h + 1} N_i \left(w^T\mu_i - w^T\mu \right)^2 \\
-&= \sum_i^{h + 1} N_i \left(w^T(\mu_i -\mu) \right)^2 \\
-&= \sum_i^{h + 1} N_i \left(w^T(\mu_i -\mu)(\mu_i -\mu)^Tw\right) \\
-&= w^T\left(\sum_i^{h + 1}N_i(\mu_i -\mu)(\mu_i -\mu)^T\right)w \\
+\sum_i^{h} N_i(\bar{\mu_i} - \bar{\mu})^2
+&= \sum_i^{h} N_i \left(\frac{1}{n_i}\sum_{x \in c_i} w^Tx - \frac{1}{n}\sum w^Ty \right)^2 \\
+&= \sum_i^{h} N_i \left(w^T\mu_i - w^T\mu \right)^2 \\
+&= \sum_i^{h} N_i \left(w^T(\mu_i -\mu) \right)^2 \\
+&= \sum_i^{h} N_i \left(w^T(\mu_i -\mu)(\mu_i -\mu)^Tw\right) \\
+&= w^T\left(\sum_i^{h}N_i(\mu_i -\mu)(\mu_i -\mu)^T\right)w \\
 &= w^TS_Bw \\
 \end{align}
-$$
 
 $S_B$ is called the between class scatter matrix.
 
@@ -52,16 +51,14 @@ But we want that the variance of each classes is not too big, to avoid overlaps 
 
 So we want that:
 
-$$
 \begin{align}
-\sum_i^{h + 1} \sum_{x \in c_i} \left( \bar{x} - \bar{\mu_i}\right)^2
-&=\sum_i^{h + 1} \sum_{x \in c_i} \left( w^Tx - w^T\mu_i\right)^2 \\
-&= \sum_i^{h + 1} \sum_{x \in c_i} \left( w^T(x - \mu_i)\right)^2 \\
-&= \sum_i^{h + 1} \sum_{x \in c_i} w^T(x - \mu_i)(x - \mu_i)^T w \\
-&= w^T \left(\sum_i^{h + 1} \sum_{x \in c_i}(x - \mu_i)(x - \mu_i)^T \right) w \\
+\sum_i^{h} \sum_{x \in c_i} \left( \bar{x} - \bar{\mu_i}\right)^2
+&=\sum_i^{h} \sum_{x \in c_i} \left( w^Tx - w^T\mu_i\right)^2 \\
+&= \sum_i^{h} \sum_{x \in c_i} \left( w^T(x - \mu_i)\right)^2 \\
+&= \sum_i^{h} \sum_{x \in c_i} w^T(x - \mu_i)(x - \mu_i)^T w \\
+&= w^T \left(\sum_i^{h} \sum_{x \in c_i}(x - \mu_i)(x - \mu_i)^T \right) w \\
 &= w^T S_w w \\
 \end{align}
-$$
 
 $S_w$ is called the within class scatter matrix.
 
@@ -88,13 +85,15 @@ But LDA has the asumption that the datas follow a normal distribution, so if we 
 
 However, we commonly use PCA with LDA for dimensional reduction.
 
+\newpage
+
 # Results
 
 ## Gradient descent iterations
 
 I try the gradient descent method for multiple iterations (from 1000 to 10000) with the binary dataset cancer, and I have obtained the following graphic:
 
-![Gradient descent with differents iterations](./gradient-descent.png)
+![Gradient descent with differents iterations](./Figure_1.png)
 
 
 On the plot, we can see that for a relatively small number of iterations, we have a bad accuracy, and then, when the number of iterations increase, the accuracy becomes better.
@@ -107,8 +106,15 @@ So for the gradient descent, it's an optimization problem to find the right lear
 
 Here is an example of the results obtained with the learning rate equals to 1 and with the learning rate equals to 0.1 to show that the learning rate plays an important role in the computation of $w$:
 
-![Gradient descent with learning rate = 0](./learning_rate_0.png)
-![Gradient descent with learning rate = 1](./learning_rate_1.png)
+```text
+Learning rate = 1
+LDA_GD train accuracy: 0.43358395989974935
+LDA_GD test accuracy: 0.22941176470588234
+Learning rate = 0.1
+LDA_GD train accuracy: 0.8847117794486216
+LDA_GD test accuracy: 0.9352941176470588
+
+```
 
 We can see that for the learning rate = 1, we can't have results as good as with a smaller learning rate, since the method oscillate further away from the optimal $w$.
 
@@ -122,6 +128,8 @@ One advantage and one disavantage of the gradient descent is that this method is
 On the contrary, the raleigh method is not parametrizable. The results are less good than the gradient descent, but we don't need to find the optimal parameters to find a solution, so we would always have good results, but not excellent results as with the gradient descent method.
 
 So the gradient descent and the raleigh method are very good, as we can see below, but the gradient descent has an advantage compared to the raleigh method: the gradient descent is parametrizable.
+
+\newpage
 
 # Conclusion
 
