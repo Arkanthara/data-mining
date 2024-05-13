@@ -20,6 +20,8 @@ class LDA:
         # One filled, for the binary classification task, this list will thus hold two elements (one for class), each one with shape (num_features,)
         self.means = []
 
+        self.mean_overall = 0.
+
     def train(self, X, y):
         """Train the model.
 
@@ -67,11 +69,8 @@ class LDA:
         # We define h = number of classes - 1
         h = self.n_components
 
-        # We get all the classes, and we sort then in decrease order
-        # to have same results between raleigh method and gd method...
-        # In fact, in gd method, we have alway class 1 before class 0, so I invert the classes
-        # to have also in raleigh method the class 1 before class 0...
-        classes = np.sort(np.unique(y))[::-1]
+        # We get all the classes and we sort then (to be sure to access later to mean of right class)
+        classes = np.sort(np.unique(y))
 
         # We initialise matrix SW and SB
         SW = np.zeros((X.shape[1], X.shape[1]))
@@ -81,9 +80,11 @@ class LDA:
         add_means = False
         if len(self.means) == 0:
             add_means = True
+            # Add the overall mean
+            self.mean_overall = np.mean(X, axis = 0)
 
         # We iterate on each classes (so on h + 1)
-        for i in range(h + 1):
+        for i in range(len(classes)):
 
             # This give us only the datas where the label is equal to the current class
             X_ci = X[y == classes[i]]
@@ -94,15 +95,9 @@ class LDA:
 
             # Then, we compute SW
             SW += (X_ci - self.means[i]).T @ (X_ci - self.means[i])
-        
-        # We iterate on each h
-        for i in range(h):
-
-            # It's to compare each class to each other classes
-            for j in range(i + 1, h):
-
-                # We compute SB
-                SB += (self.means[i] - self.means[i + j]).reshape(-1, 1) @ (self.means[i] - self.means[i + j]).reshape(1, -1)
+            
+            # And SB
+            SB += X_ci.shape[0] * (self.means[i] - self.mean_overall).reshape(-1, 1) @ (self.means[i] - self.mean_overall).reshape(1, -1)
         
         return SW, SB
 
@@ -169,7 +164,7 @@ class LDA:
         assert self.linear_discriminants is not None
 
         # There should only be 2 mean values (one for each class)
-        # as this is binary classificatio.
+        # as this is binary classification.
         assert len(self.means) == 2
 
         # We compute M used to obtain threshold
@@ -182,8 +177,8 @@ class LDA:
         predictions = self.transform(X)[:, 0]
 
         # We make predictions. Note that here, we have inverted the order of the prediction
-        predictions[predictions > threshold] = 0
-        predictions[predictions <= threshold] = 1
+        predictions[predictions > threshold] = 1
+        predictions[predictions <= threshold] = 0
 
         return predictions
 
