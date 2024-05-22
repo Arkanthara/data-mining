@@ -74,7 +74,7 @@ This ratio is called the odds.
 
 In our case, as $p(y_i = 1|x_i)$ is the probability that the event is happening, and $p(y_i = 0|x_i)$ is the probability that the event is not happening, we have the odds defined like this:
 
-$$Odds = \frac{p(y_i = 1|x_i)}{p(y_i = 0|x_i)}$$ {#eq:odds}
+$$Odds = \frac{p(y_i = 1|x_i)}{1 - p(y_i = 1|x_i)}$$ {#eq:odds}
 
 In logistic regression, we want that the logarithm of the odds is linear.
 So according to equation @eq:odds, we want that:
@@ -157,8 +157,9 @@ As $y$ has a size of $n \times h$, $X$ a size of $n \times d$ and $w$ a size of 
 
 $$
 \begin{aligned}
-\text{min arg}_w \sum_i^n\left( -y_ilog(\sigma(x_iw)) - (1 - y_i)log(1 - \sigma(x_iw)) \right) \\
-= \text{min arg}_w \left( -y^Tlog(\sigma(Xw)) - (1 - y^T)log(1 - \sigma(Xw)) \right)
+\text{min arg}_w \sum_i^n\left( -log(\sigma(x_iw))y_i - log(1 - \sigma(x_iw))(1 - y_i) \right) \\
+= \text{min arg}_w \left( -y^Tlog(\sigma(Xw)) - (1 - y^T)log(1 - \sigma(Xw)) \right) \\
+&= NLL(X, y)
 \end{aligned}
 $$ {#eq:prod}
 
@@ -181,21 +182,69 @@ $$
 &=\sigma (z) (1 - \frac{1}{1 + e^{-z}}) \\
 &=\sigma (z) (1 - \sigma (z)) \\
 \end{aligned}
-$$
+$$ {#eq:gradsig}
 
 So according to the chain rule, we have:
 $$
 \begin{aligned}
-\frac{\partial}{\partial w_k} \left( -y^Tlog(\sigma(Xw)) - (1 - y^T)log(1 - \sigma(Xw)) \right)
-\\
-= -y^T \frac{\partial}{\partial w_k}log(\sigma(Xw)) - (1 - y^T)\frac{\partial}{\partial w_k}log(1 - \sigma(Xw)) \\
-= -y^T \frac{\partial log(\sigma(Xw))}{\partial \sigma} \frac{\partial \sigma}{\partial Xw} \frac{\partial Xw}{\partial w_k}
--(1 - y^T)\frac{\partial log(1 - \sigma(Xw))}{\partial \sigma} \frac{\partial \sigma}{\partial Xw} \frac{\partial Xw}{\partial w_k}
- \\
-= -y^T \frac{1}{\sigma(Xw))} \sigma(Xw)(1 - \sigma(Xw)) X_{:,k}
--(1 - y^T)\left(-\frac{1}{\sigma(Xw)}\sigma(Xw)(1 - \sigma(Xw)) X_{:, k} \right)
- \\
-= -y^T (1 - \sigma(Xw)) X_{:,k} +(1 - y^T)(1 - \sigma(Xw)) X_{:, k}\\
-= (1 - 2y^T) (1 - \sigma(Xw)) X_{:,k}\\
+\frac{\partial}{\partial w_k} NLL(X, y)
+&= \frac{\partial}{\partial w_k} \left( -y^Tlog(\sigma(Xw)) - (1 - y^T)log(1 - \sigma(Xw)) \right)\\
+&= -y^T \frac{\partial}{\partial w_k}log(\sigma(Xw)) - (1 - y^T)\frac{\partial}{\partial w_k}log(1 - \sigma(Xw)) \\
+&= -y^T \frac{\partial log(\sigma(Xw))}{\partial \sigma} \frac{\partial \sigma}{\partial Xw} \frac{\partial Xw}{\partial w_k} \\
+&\ \ \ - (1 - y^T)\frac{\partial log(1 - \sigma(Xw))}{\partial (1 - \sigma(Xw))} \frac{\partial (1 - \sigma(Xw))}{\partial \sigma} \frac{\partial \sigma(Xw)}{\partial Xw}  \frac{\partial Xw}{\partial w_k} \\
+&= -y^T \frac{1}{\sigma(Xw))} \sigma(Xw)(1 - \sigma(Xw)) X_{:,k} \\
+&\ \ \ -(1 - y^T)\frac{1}{1 - \sigma(Xw)}(-1)\sigma(Xw)(1 - \sigma(Xw)) X_{:, k} \\
+&= ((1 - y^T)\sigma(Xw) -y^T (1 - \sigma(Xw))) X_{:, k} \\
+&= (\sigma(Xw) -y^T\sigma(Xw) -y^T 1_{n, 1} + y^T\sigma(Xw)) X_{:, k} \\
+&= \left(\sigma(Xw)  - \sum_i^n y_i \right)X_{:, k}\\
 \end{aligned}
+$$ {#eq:grad}
+
+So the gradient of the cost function give us:
+
 $$
+\nabla NLL(X, y) = 
+\begin{bmatrix}
+\frac{\partial}{\partial w_0} NLL(X, y) \\
+\vdots \\
+\frac{\partial}{\partial w_d} NLL(X, y) \\
+\end{bmatrix}
+$$
+
+Now, we have to make a gradient descent:
+
+$$
+w^{i+ 1} = w^{i} - \eta \nabla NLL(X, y)
+$$ {#eq:graddesc}
+
+with $\eta$ the learning rate.
+
+## Multinomial case
+
+We have $h$ classes $c_1, \cdots, c_h \in C$.
+
+If $y_i = c_k \in C$, we define $\tilde{y}_i$ a vector of size $1 \times h$ like this:
+
+$$
+\tilde{y}_{ij} = \left\{
+\begin{aligned}
+1 & \ \text{if} j = k \\
+0 & \ \text{else}
+\end{aligned}
+\right.
+$$ {#eq:tildey}
+
+So we have for instance $\tilde{y}_i = \begin{bmatrix} 0 & 0 & 1 & 0 \end{bmatrix}$ if $h = 4$.
+
+Now, we note $y_i = \tilde{y}_i$. So $y$ is of size $n \times h$.
+
+We have for each $k \in [1, h]$ that the probability that $y_{ik} = 1$ depends on $x_i$.
+
+So we have:
+
+$$p(y_{ik} = 1 | x_i) = h_k(x_i)$$ {#eq:1}.
+
+The odds is always given by the equation @eq:odds.
+
+We define the odds ratio like this: 
+
