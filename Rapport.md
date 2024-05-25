@@ -238,13 +238,54 @@ So we have for instance $\tilde{y}_i = \begin{bmatrix} 0 & 0 & 1 & 0 \end{bmatri
 
 Now, we note $y_i = \tilde{y}_i$. So $y$ is of size $n \times h$.
 
-We have for each $k \in [1, h]$ that the probability that $y_{ik} = 1$ depends on $x_i$.
+We have for each $k \in [1, h]$ that the probability that $y_{ik} = 1$ or $0$ depends on $x_i$.
 
 So we have:
 
-$$p(y_{ik} = 1 | x_i) = h_k(x_i)$$ {#eq:1}.
+$$p(y_{ik} | x_i) = h_k(x_i)$$ {#eq:1}
 
-The odds is always given by the equation @eq:odds.
+Thus, we have:
 
-We define the odds ratio like this: 
+$$
+p(y_{i} | x_i) = \prod_{k = 1}^h p(y_{ik} | x_i)^{y_{ik}}
+$$ {#eq:2}
 
+But what is the function $h_k(x_i)$ ? Is it the sigmoid function ?
+
+No, it's not the sigmoid function, because this function work only for two variables.
+So we want a function like the sigmoid function that works for more than two variables, that's why, we'd try to generalize the sigmoid function to more than one variable
+
+If we remember the equation @eq:sigma, we have (binary case):
+$$
+\begin{aligned}
+p(y_i = 1 | x_i) 
+&= \frac{e^{x_iw}}{e^{x_iw} + 1} \\
+\end{aligned}
+$$ {#eq:3}
+
+Now, we suppose that we have $W = \begin{bmatrix} w_1 & \cdots & w_1 \end{bmatrix}$ with each parameter $w_k$ defined specially for the class $k$.
+
+In binary case, we can define $W = \begin{bmatrix} w_1 & w_2 \end{bmatrix}$, with $w_1$ a column vector of $0$.
+
+So we can write the equation @eq:3 like this:
+
+$$
+\begin{aligned}
+p(y_i = 1 | x_i) 
+&= \frac{e^{x_iw_2}}{e^{x_iw_2} + e^0} \\
+&= \frac{e^{x_iw_2}}{e^{x_iw_2} + e^{x_iw_1}} \\
+&= \frac{e^{x_iw_2}}{\sum_{k = 1}^2 e^{x_iw_2} + e^{x_iw_1}} \\
+&= \frac{e^{x_iw_2}}{\sum_{k = 1}^h e^{x_iw_2} + e^{x_iw_1}} \\
+\end{aligned}
+$$ {#eq:4}
+
+So if we have $h$ classes, we can define a function like this:
+
+$$
+\begin{aligned}
+p(y_{ik} = 1 | x_i)
+&= \frac{e^{x_iw_k}}{\sum_{j = 1}^{h} e^{x_iw_j}} \\
+&= \frac{e^{x_iw_k}}{\sum_{j = 1}^{h} (e^{x_iW})_{1, j}} \\
+&= \text{softmax}(W, x_i, k)
+\end{aligned}
+$$ {#eq:softmax}
