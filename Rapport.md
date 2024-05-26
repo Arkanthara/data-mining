@@ -281,7 +281,7 @@ Now, we suppose that we have
 $$
 W = \begin{bmatrix} w_1 & \cdots & w_h \end{bmatrix}
 $$ {#eq:w}
-with each parameter $w_k$ defined specially for the class $k$.
+with each parameter $w_k$ defined specially for the class $k$. (Note that the size of $w_k$ is $d \times 1$, so the size of $W$ is $d \times h$)
 
 In binary case, we can define $W = \begin{bmatrix} w_1 & w_2 \end{bmatrix}$, with $w_1$ a column vector of $0$.
 
@@ -338,25 +338,32 @@ According to equation @eq:softmax and equation @eq:softzeros, we have that $p(y_
 
 And we also want to use the gradient descent to optimize the parameter $W$, so we need a cost function to minimise.
 
+We want to use the logarith likelihood, because we have exponentials in softmax, so it will facilitate the derivate of the cost function.
+As we use the likelihood and as we want to maximise this function, we want to minimise the inverse of likelihood.
+However, we have $log\left(\frac{1}{f(x)}\right) = -log(f(x))$.
+
+So we define the cost function as the negative logarithm likelihood function, and we want to minimise this function for all the instances.
+
 So we have:
 $$
 \begin{aligned}
-\arg \max_{W} \sum_i^n p(y | X) 
-&= \arg \min_{W} \frac{1}{\sum_i^n p(y | X)} \\
-&= \arg \min_{W} log\left(\frac{1}{\sum_i^n p(y | X)}\right) \\
-&= \arg \min_{W} - log\left(\sum_i^n p(y | X)\right) \\
-&= \arg \min_{W} - \sum_i^n log\left(p(y | X)\right) \\
+\arg \min_{W} NLL(W, X, y)
+&= \arg \min_{W} \sum_i^n -log(p(y | X)) \\
 &= \arg \min_{W} - \sum_i^n log\left(\prod_{k = 1}^h \text{softmax}(W, x_i, k)^{y_{ik}}\right) \\
 &= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h log\left(\text{softmax}(W, x_i, k)^{y_{ik}}\right) \\
 &= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(\text{softmax}(W, x_i, k)\right) \\
 &= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(\frac{e^{x_iw_k}}{\sum_{j = 1}^{h} (e^{x_iW})_{1, j}}\right) \\
 &= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} \left(x_iw_k - log\left(\sum_{j = 1}^{h} (e^{x_iW})_{1, j}\right) \right) \\
 &= \arg \min_{W}  \sum_i^n \sum_{k = 1}^h y_{ik} \left(log\left(\sum_{j = 1}^{h} (e^{x_iW})_{1, j}\right) - x_iw_k \right) \\
-&= \arg \min_{W}  \sum_k^h 1_{1, h} y^T \left(log\left(e^{XW}\right) - Xw_k \right) 1_{h, 1} \\
-&= NLL(W, X, y)
+&= \arg \min_{W}  \sum_k^h 1_{1, h} y^T \left(log\left(e^{XW} 1_{h, 1}\right) - Xw_k \right) 1_{h, 1} \\
 \end{aligned}
 $$ {#eq:nll}
 
+
+
+
+We want to explain how we transform the function $NLL(W, X, y)$ to a matrix product.
+We use $1_{x, y}$ to indicate that we use a matrix of ones of size $x \times y$.
 Note that we have $W$ defined in equation @eq:w and that:
 
 | Matrix | Size |
@@ -368,21 +375,25 @@ Note that we have $W$ defined in equation @eq:w and that:
 So if we look at the sizes, we have:
 $$
 \begin{aligned}
-\ \ \  \sum_k^h 1_{1, h} y^T \left(log\left(e^{XW}\right) - Xw_k \right) 1_{h, 1} \\
-= \sum_k^h 1 \times h \times (n\times h)^T \times \left( n \times d \times d \times h - n \times d \times d \times 1 \right) \times h \times 1 \\
-= \sum_k^h 1 \times n \times \left( n \times h - n \times 1 \right) \times h \times 1 \\
-= \sum_k^h 1 \times n \times n \times h \times h \times 1\\
-= \sum_k^h 1  \\
-= scalar
+NLL(W, X, y) &=  1_{1, h} y^T \left(log\left(e^{XW} 1_{h, 1}\right) - Xw_k \right) \\
+&= 1 \times h \times (n\times h)^T \times \left( n \times d \times d \times h \times h \times 1 - n \times d \times d \times 1) \right) \times h \times 1 \\
+&= 1 \times n \times \left( n \times 1 - n \times 1 \right) \\
+&= 1 \times n \times n \times 1\\
+&= 1  \\
+&= scalar
 \end{aligned}
 $$
 
-This function is called the negative logarithm likelihood.
 
 ### Gradient
 
 We want to find the gradient of the $NLL$ function obtained in equation @eq:nll.
 
-First, we want to compute the gradient of the softmax function.
-
 We have:
+
+$$
+\begin{aligned}
+\frac{\partial}{\partial w_k} NLL(W, X, y)
+&= \sum_k^h 1_{1, h} y^T \left(log\left(\sum_j^h e^{Xw_j} \right) - Xw_k \right) 1_{h, 1} \\
+\end{aligned}
+$$
