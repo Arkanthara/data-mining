@@ -81,11 +81,11 @@ So according to equation @eq:odds, we want that:
 $$
 \begin{aligned}
 log\left( \frac{p(y_i = 1|x_i)}{p(y_i = 0|x_i)} \right) &= w_0 + w_1 \cdot x_{i1} + \cdots + w_d \cdot x_{id} \\
-\Leftrightarrow log\left( \frac{p(y_i = 1|x_i)}{p(y_i = 0|x_i)} \right) &= w_0 + x_iw \\
-\Leftrightarrow log\left( \frac{p(y_i = 1|x_i)}{p(y_i = 0|x_i)} \right) &= x_iw
+\Leftrightarrow \ \ \      log\left( \frac{p(y_i = 1|x_i)}{p(y_i = 0|x_i)} \right) &= w_0 + x_iw \\
+\Leftrightarrow \ \ \      log\left( \frac{p(y_i = 1|x_i)}{p(y_i = 0|x_i)} \right) &= x_iw
 & \ \text{if}\ x = \begin{bmatrix} 1 & x_{i1} & \cdots & x_{id} \end{bmatrix} \\
 && \ \text{and}\ w^T = \begin{bmatrix} w_0 & \cdots & w_d \end{bmatrix} \\
-\Leftrightarrow \frac{p(y_i = 1|x_i)}{p(y_i = 0|x_i)} &= e^{x_iw}
+\Leftrightarrow \ \ \      \frac{p(y_i = 1|x_i)}{p(y_i = 0|x_i)} &= e^{x_iw}
 \end{aligned}
 $$ {#eq:e}
 
@@ -132,7 +132,19 @@ $$ {#eq:total}
 We want to use the gradient descent. So we want to have something to minimise.
 As we have to maximize the equation @eq:prob, we only have to invert this equation to have a minimisation problem.
 
-We can easily suppose that the likelihood is always non zeros because else,
+We can easily see that the likelihood is always non zeros:
+we know that the exponential function is strictly positive, and according to equation @eq:sigma, we have:
+
+$$
+\begin{aligned}
+&0 &< e^{x_iw} &< 1 + e^{x_iw}\\
+\Leftrightarrow \ \ \ &0 &< \frac{e^{x_iw}}{1 + e^{x_iw}} &< 1 \\
+\Leftrightarrow \ \ \ &0 &< sigma(x_iw) &< 1 \\
+\Leftrightarrow \ \ \ &0 &< p(y_i | x_i) &< 1
+\end{aligned}
+$$
+
+because else,
 it means that all the elements are in one class, so we don't have two classes and we don't need to make some classification.
 
 So we have according to equation @eq:total:
@@ -162,6 +174,8 @@ $$
 &= NLL(X, y)
 \end{aligned}
 $$ {#eq:prod}
+
+### Gradient
 
 Now we have to compute the derivate of the cost function @eq:prod.
 
@@ -263,7 +277,11 @@ p(y_i = 1 | x_i)
 \end{aligned}
 $$ {#eq:3}
 
-Now, we suppose that we have $W = \begin{bmatrix} w_1 & \cdots & w_1 \end{bmatrix}$ with each parameter $w_k$ defined specially for the class $k$.
+Now, we suppose that we have
+$$
+W = \begin{bmatrix} w_1 & \cdots & w_h \end{bmatrix}
+$$ {#eq:w}
+with each parameter $w_k$ defined specially for the class $k$.
 
 In binary case, we can define $W = \begin{bmatrix} w_1 & w_2 \end{bmatrix}$, with $w_1$ a column vector of $0$.
 
@@ -274,8 +292,8 @@ $$
 p(y_i = 1 | x_i) 
 &= \frac{e^{x_iw_2}}{e^{x_iw_2} + e^0} \\
 &= \frac{e^{x_iw_2}}{e^{x_iw_2} + e^{x_iw_1}} \\
-&= \frac{e^{x_iw_2}}{\sum_{k = 1}^2 e^{x_iw_2} + e^{x_iw_1}} \\
-&= \frac{e^{x_iw_2}}{\sum_{k = 1}^h e^{x_iw_2} + e^{x_iw_1}} \\
+&= \frac{e^{x_iw_2}}{\sum_{k = 1}^2 e^{x_iw_k}} \\
+&= \frac{e^{x_iw_2}}{\sum_{k = 1}^h e^{x_iw_k}} \\
 \end{aligned}
 $$ {#eq:4}
 
@@ -289,3 +307,82 @@ p(y_{ik} = 1 | x_i)
 &= \text{softmax}(W, x_i, k)
 \end{aligned}
 $$ {#eq:softmax}
+
+We can easily see that $\text{softmax}$ is between $0$ and $1$:
+As the exponential function is always positive, we have that:
+
+$$
+\begin{aligned}
+&0 &< e^{x_iw_k} &< e^{x_iw_k} + \sum_{j \neq k}^h e^{x_iw_j} \\
+\Leftrightarrow \ \ \ &0 &< e^{x_iw_k} &< \sum_{j = 1}^h e^{x_iw_j} \\
+\Leftrightarrow \ \ \ &0 &< e^{x_iw_k} &< \sum_{j = 1}^h e^{x_iw_j} \\
+\Leftrightarrow \ \ \ &0 &< \frac{e^{x_iw_k}}{\sum_{j = 1}^h e^{x_iw_j}} &< 1 \\
+\Leftrightarrow \ \ \ &0 &< \text{softmax}(W, x_i, k) &< 1 \\
+\end{aligned}
+$$ {#eq:softzeros}
+
+So thanks to equation @eq:softmax, we have:
+
+$$
+\begin{aligned}
+p(y_{i} | x_i) &= \prod_{k = 1}^h p(y_{ik} = 1 | x_i)^{y_{ik}} \\
+&= \prod_{k = 1}^h \text{softmax}(W, x_i, k)^{y_{ik}} \\
+\end{aligned}
+$$ {#eq:probsoft}
+
+### Cost function
+
+Now, as for the logistic regression, we want to find a cost function that maximise $p(y_{i} |x_i)$ for each instance.
+So we want to maximise the likelihood.
+According to equation @eq:softmax and equation @eq:softzeros, we have that $p(y_i |x_i) \neq 0$.
+
+And we also want to use the gradient descent to optimize the parameter $W$, so we need a cost function to minimise.
+
+So we have:
+$$
+\begin{aligned}
+\arg \max_{W} \sum_i^n p(y | X) 
+&= \arg \min_{W} \frac{1}{\sum_i^n p(y | X)} \\
+&= \arg \min_{W} log\left(\frac{1}{\sum_i^n p(y | X)}\right) \\
+&= \arg \min_{W} - log\left(\sum_i^n p(y | X)\right) \\
+&= \arg \min_{W} - \sum_i^n log\left(p(y | X)\right) \\
+&= \arg \min_{W} - \sum_i^n log\left(\prod_{k = 1}^h \text{softmax}(W, x_i, k)^{y_{ik}}\right) \\
+&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h log\left(\text{softmax}(W, x_i, k)^{y_{ik}}\right) \\
+&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(\text{softmax}(W, x_i, k)\right) \\
+&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(\frac{e^{x_iw_k}}{\sum_{j = 1}^{h} (e^{x_iW})_{1, j}}\right) \\
+&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} \left(x_iw_k - log\left(\sum_{j = 1}^{h} (e^{x_iW})_{1, j}\right) \right) \\
+&= \arg \min_{W}  \sum_i^n \sum_{k = 1}^h y_{ik} \left(log\left(\sum_{j = 1}^{h} (e^{x_iW})_{1, j}\right) - x_iw_k \right) \\
+&= \arg \min_{W}  \sum_k^h 1_{1, h} y^T \left(log\left(e^{XW}\right) - Xw_k \right) 1_{h, 1} \\
+&= NLL(W, X, y)
+\end{aligned}
+$$ {#eq:nll}
+
+Note that we have $W$ defined in equation @eq:w and that:
+
+| Matrix | Size |
+|:------:|:----:|
+|$X$|$n \times d$|
+|$y$|$n \times h$|
+|$W$|$d \times h$|
+
+So if we look at the sizes, we have:
+$$
+\begin{aligned}
+\ \ \  \sum_k^h 1_{1, h} y^T \left(log\left(e^{XW}\right) - Xw_k \right) 1_{h, 1} \\
+= \sum_k^h 1 \times h \times (n\times h)^T \times \left( n \times d \times d \times h - n \times d \times d \times 1 \right) \times h \times 1 \\
+= \sum_k^h 1 \times n \times \left( n \times h - n \times 1 \right) \times h \times 1 \\
+= \sum_k^h 1 \times n \times n \times h \times h \times 1\\
+= \sum_k^h 1  \\
+= scalar
+\end{aligned}
+$$
+
+This function is called the negative logarithm likelihood.
+
+### Gradient
+
+We want to find the gradient of the $NLL$ function obtained in equation @eq:nll.
+
+First, we want to compute the gradient of the softmax function.
+
+We have:
