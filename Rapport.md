@@ -348,7 +348,8 @@ So we have:
 $$
 \begin{aligned}
 \arg \min_{W} NLL(W, X, y)
-&= \arg \min_{W} \sum_i^n -log(p(y | X)) \\
+&= \arg \min_{W} \sum_i^n NLL(W, x_i, y_i) \\
+&= \arg \min_{W} \sum_i^n -log(p(y_i | x_i)) \\
 &= \arg \min_{W} - \sum_i^n log\left(\prod_{k = 1}^h \text{softmax}(W, x_i, k)^{y_{ik}}\right) \\
 &= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h log\left(\text{softmax}(W, x_i, k)^{y_{ik}}\right) \\
 &= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(\text{softmax}(W, x_i, k)\right) \\
@@ -394,6 +395,17 @@ We have:
 $$
 \begin{aligned}
 \frac{\partial}{\partial w_k} NLL(W, X, y)
-&= \sum_k^h 1_{1, h} y^T \left(log\left(\sum_j^h e^{Xw_j} \right) - Xw_k \right) 1_{h, 1} \\
+&= \frac{\partial}{\partial w_k} \sum_i^h 1_{1, h} y^T \left(log\left(\sum_j^h e^{Xw_j} \right) - Xw_i \right) 1_{h, 1} \\
+&= \sum_i^h 1_{1, h} y^T \left(\frac{\partial log\left(\sum_j^h e^{Xw_j} \right) }{\partial \sum_j^h e^{Xw_j}}\frac{\partial \sum_j^h e^{Xw_j}}{\partial w_k} - \frac{\partial}{\partial w_k} Xw_i \right) 1_{h, 1} \\
+\text{case}\ i = k: \\
+&= \sum_i^h 1_{1, h} y^T \left(\frac{X^Te^{Xw_k}}{\sum_j^h e^{Xw_j}} -  X \right) \\
+&= \sum_i^h 1_{1, h} y^T \left(\frac{e^{Xw_k}}{\sum_j^h e^{Xw_j}} -  1 \right) X  \\
+&= \sum_i^h 1_{1, h} y^T \left(softmax(W, X, k) -  1 \right) X  \\
+\text{case}\ i \neq k: \\
+&= \sum_i^h 1_{1, h} y^T \left(\frac{X^Te^{Xw_k}}{\sum_j^h e^{Xw_j}}\right) \\
+&= \sum_i^h 1_{1, h} y^T softmax(W, X, k)X \\
+\text{So general case}: \\
+&= \sum_i^h 1_{1, h} y^T \left(softmax(W, X, k) -  y_{:, k} \right) X  \\
+\text{case}\ i \neq k: \\
 \end{aligned}
 $$
