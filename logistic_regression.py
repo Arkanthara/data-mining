@@ -29,7 +29,9 @@ class Logistic(Classifier):
         #############################################################################
         # TODO: Compute the scores and store them in scores.                        #
         #############################################################################
-        pass
+        sigmoid = lambda z: 1/(1 + np.exp(-z))
+
+        scores = sigmoid(X @ self.W)
 
         #############################################################################
         #                          END OF YOUR CODE                                 #
@@ -44,7 +46,13 @@ class Logistic(Classifier):
         # If you are not careful here, it is easy to run into numeric instability.  #
         # Don't forget the regularization!                                          #
         #############################################################################
-        pass
+        y = y.reshape(-1, 1)
+        
+        loss = float(- y.T @ np.log(sigmoid(X @ self.W))
+                     - (np.ones_like(y.T) - y.T) @ np.log(np.ones_like(y) - sigmoid(X @ self.W))
+                     + reg * np.sum(self.W **2))
+        loss /= num_train
+
 
         #############################################################################
         #                          END OF YOUR CODE                                 #
@@ -55,8 +63,12 @@ class Logistic(Classifier):
         # TODO: Compute the gradients and store the gradients in dW.                #
         # Don't forget the regularization!                                          #
         #############################################################################     
-        pass
-
+        
+        dW = X.T @ (sigmoid(X @ self.W) - y) + 2 * reg * self.W
+        dW /= num_train
+        
+        
+    
         #############################################################################
         #                          END OF YOUR CODE                                 #
         #############################################################################
@@ -68,7 +80,12 @@ class Logistic(Classifier):
         # TODO:                                                                   #
         # Implement this method. Store the predicted labels in y_pred.            #
         ###########################################################################
-        pass
+
+        sigmoid = lambda z: 1 / (1 + np.exp(-z))
+
+        y_pred = sigmoid(X @ self.W)
+        y_pred[y_pred > 0.5] = 1
+        y_pred[y_pred <= 0.5] = 0
 
         ###########################################################################
         #                           END OF YOUR CODE                              #

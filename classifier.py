@@ -50,8 +50,9 @@ class Classifier(object):
             # TODO:                                                                 #
             # Update the weights using the gradient and the learning rate.          #
             #########################################################################
-            pass
-            
+
+            self.W -= learning_rate * grad
+
             #########################################################################
             #                       END OF YOUR CODE                                #
             #########################################################################

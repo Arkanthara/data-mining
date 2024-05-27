@@ -21,7 +21,8 @@ class Softmax(Classifier):
         #############################################################################
         # TODO: Compute the scores and store them in scores.                        #
         #############################################################################
-        pass
+
+        scores = np.exp(X @ self.W) / (np.exp(X @ self.W) @ np.ones((num_classes, 1)))
 
         #############################################################################
         #                          END OF YOUR CODE                                 #
@@ -36,7 +37,15 @@ class Softmax(Classifier):
         # If you are not careful here, it is easy to run into numeric instability.  #
         # Don't forget the regularization!                                          #
         #############################################################################
-        pass
+
+        y_tilde = np.zeros((y.shape[0], len(np.unique(y))))
+        y_tilde[np.arange(y.shape[0]), y] = 1
+
+        loss = np.sum(
+                y_tilde * (np.log(np.exp(X @ self.W @ np.ones((num_classes, 1)))) - X @ self.W)
+                )
+        loss /= num_train
+        print(loss)
 
         #############################################################################
         #                          END OF YOUR CODE                                 #

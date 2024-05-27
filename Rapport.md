@@ -304,11 +304,11 @@ $$
 p(y_{ik} = 1 | x_i)
 &= \frac{e^{x_iw_k}}{\sum_{j = 1}^{h} e^{x_iw_j}} \\
 &= \frac{e^{x_iw_k}}{\sum_{j = 1}^{h} (e^{x_iW})_{1, j}} \\
-&= \text{softmax}(W, x_i, k)
+&= softmax(W, x_i, k)
 \end{aligned}
 $$ {#eq:softmax}
 
-We can easily see that $\text{softmax}$ is between $0$ and $1$:
+We can easily see that $softmax$ is between $0$ and $1$:
 As the exponential function is always positive, we have that:
 
 $$
@@ -317,7 +317,7 @@ $$
 \Leftrightarrow \ \ \ &0 &< e^{x_iw_k} &< \sum_{j = 1}^h e^{x_iw_j} \\
 \Leftrightarrow \ \ \ &0 &< e^{x_iw_k} &< \sum_{j = 1}^h e^{x_iw_j} \\
 \Leftrightarrow \ \ \ &0 &< \frac{e^{x_iw_k}}{\sum_{j = 1}^h e^{x_iw_j}} &< 1 \\
-\Leftrightarrow \ \ \ &0 &< \text{softmax}(W, x_i, k) &< 1 \\
+\Leftrightarrow \ \ \ &0 &< softmax(W, x_i, k) &< 1 \\
 \end{aligned}
 $$ {#eq:softzeros}
 
@@ -326,7 +326,7 @@ So thanks to equation @eq:softmax, we have:
 $$
 \begin{aligned}
 p(y_{i} | x_i) &= \prod_{k = 1}^h p(y_{ik} = 1 | x_i)^{y_{ik}} \\
-&= \prod_{k = 1}^h \text{softmax}(W, x_i, k)^{y_{ik}} \\
+&= \prod_{k = 1}^h softmax(W, x_i, k)^{y_{ik}} \\
 \end{aligned}
 $$ {#eq:probsoft}
 
@@ -350,9 +350,9 @@ $$
 \arg \min_{W} NLL(W, X, y)
 &= \arg \min_{W} \sum_i^n NLL(W, x_i, y_i) \\
 &= \arg \min_{W} \sum_i^n -log(p(y_i | x_i)) \\
-&= \arg \min_{W} - \sum_i^n log\left(\prod_{k = 1}^h \text{softmax}(W, x_i, k)^{y_{ik}}\right) \\
-&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h log\left(\text{softmax}(W, x_i, k)^{y_{ik}}\right) \\
-&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(\text{softmax}(W, x_i, k)\right) \\
+&= \arg \min_{W} - \sum_i^n log\left(\prod_{k = 1}^h softmax(W, x_i, k)^{y_{ik}}\right) \\
+&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h log\left(softmax(W, x_i, k)^{y_{ik}}\right) \\
+&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(softmax(W, x_i, k)\right) \\
 &= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(\frac{e^{x_iw_k}}{\sum_{j = 1}^{h} (e^{x_iW})_{1, j}}\right) \\
 &= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} \left(x_iw_k - log\left(\sum_{j = 1}^{h} (e^{x_iW})_{1, j}\right) \right) \\
 &= \arg \min_{W}  \sum_i^n \sum_{k = 1}^h y_{ik} \left(log\left(\sum_{j = 1}^{h} (e^{x_iW})_{1, j}\right) - x_iw_k \right) \\
@@ -438,3 +438,179 @@ So we can make a gradient descent to find the optimal $W$:
 $$W^{i + 1} = W^i - \eta \nabla_{W}NLL(W, X, y)$$ {#eq:gd}
 
 with $\eta$ the learning rate.
+
+
+## Softmax
+
+We have $h$ classes.
+
+If $y_i = class_k$, we define $\tilde{y}_i$ a vector of size $1 \times h$ like this:
+
+$$
+\tilde{y}_{ij} = \left\{
+\begin{aligned}
+1 & \ \text{if} j = k \\
+0 & \ \text{else}
+\end{aligned}
+\right.
+$$ {#eq:tildey}
+
+So we have for instance $\tilde{y}_i = \begin{bmatrix} 0 & 0 & 1 & 0 \end{bmatrix}$ if $h = 4$.
+
+This class representation is called one-hot encoding.
+
+Now, we note $y_i$ the result of the one-hot encoding of $y_i$: $y_i = \tilde{y}_i$. So $y$ is of size $n \times h$.
+
+If we remember the equation @eq:sigma, we have (binary case):
+$$
+\begin{aligned}
+p(y_i = 1 | x_i) 
+&= \frac{e^{x_iw}}{e^{x_iw} + 1} \\
+\end{aligned}
+$$ {#eq:3}
+
+We want to generalize the sigmoid function to more than two variables to have $p(c | x_i)$ the probability of class $c$ in one-hot representation according to the features $x_i$.
+
+Now, we suppose that we have
+$$
+W = \begin{bmatrix} w_1 & \cdots & w_h \end{bmatrix}
+$$ {#eq:w}
+with each parameter $w_k$ defined specially for the class $k$. (Note that the size of $w_k$ is $d \times 1$, so the size of $W$ is $d \times h$)
+
+In binary case, we can define $W = \begin{bmatrix} w_1 & w_2 \end{bmatrix}$, with $w_1$ a column vector of $0$.
+
+So we can write the equation @eq:3 like this:
+
+$$
+\begin{aligned}
+p(y_i = 1| x_i)
+&= \frac{e^{x_iw_2}}{e^{x_iw_2} + e^0} \\
+&= \frac{e^{x_iw_2}}{e^{x_iw_2} + e^{x_iw_1}} \\
+&= \frac{e^{x_iw_2}}{\sum_{k = 1}^2 e^{x_iw_k}} \\
+&= \frac{e^{x_iw_2}}{\sum_{k = 1}^h e^{x_iw_k}} \\
+\end{aligned}
+$$ {#eq:4}
+
+So if we have $h$ classes, we can define a function like this:
+
+$$
+\begin{aligned}
+p(y_{ik} = 1 | x_i)
+&= \frac{e^{x_iw_k}}{\sum_{j = 1}^{h} e^{x_iw_j}} \\
+&= softmax(W, x_i, k)
+\end{aligned}
+$$ {#eq:softmax}
+
+And then, we can write this function in matricial form:
+
+$$
+\begin{aligned}
+p(y_i | x_i)
+&= \begin{bmatrix} p(y_{i1} = 1 | x_i) & \cdots & p(y_{ih} = 1 | x_i) \end{bmatrix} \\
+&= \begin{bmatrix} \frac{e^{x_iw_1}}{\sum_{j = 1}^{h} e^{x_iw_j}} & \cdots & \frac{e^{x_iw_h}}{\sum_{j = 1}^{h} e^{x_iw_j}}\end{bmatrix} \\
+&= \frac{e^{x_iW}}{\sum_{j = 1}^h e^{x_iw_j}} \\
+&= softmax(x_iW)
+\end{aligned}
+$$ {#eq:softmaxM}
+
+
+We can easily see that $softmax$ is between $0$ and $1$:
+As the exponential function is always positive, we have that:
+
+$$
+\begin{aligned}
+&0 &< e^{x_iw_k} &< e^{x_iw_k} + \sum_{j \neq k}^h e^{x_iw_j} \\
+\Leftrightarrow \ \ \ &0 &< e^{x_iw_k} &< \sum_{j = 1}^h e^{x_iw_j} \\
+\Leftrightarrow \ \ \ &0 &< e^{x_iw_k} &< \sum_{j = 1}^h e^{x_iw_j} \\
+\Leftrightarrow \ \ \ &0 &< \frac{e^{x_iw_k}}{\sum_{j = 1}^h e^{x_iw_j}} &< 1 \\
+\Leftrightarrow \ \ \ &0 &< softmax(W, x_i, k) &< 1 \\
+\end{aligned}
+$$ {#eq:softzeros}
+
+and we can also see that $p(y_i | x_i)$ is a distribution of probability because we have:
+
+$$
+\begin{aligned}
+\sum_k^h p(y_{ik} | x_i) &= \sum_k^h \frac{e^{x_iw_k}}{\sum_j^h e^{x_iw_j}} \\
+&=  \frac{\sum_k^h e^{x_iw_k}}{\sum_j^h e^{x_iw_j}} \\
+&=  \frac{\sum_j^h e^{x_iw_j}}{\sum_j^h e^{x_iw_j}} \\
+&= 1
+\end{aligned}
+$$ {#eq:distrib}
+
+### Cost function
+
+Now we want to define a cost function.
+
+We remember that we have $X$, the training features and $y$ the labels corresponding to the features.
+We define $W$ and we want to optimize this parameter.
+
+We have:
+
+| Matrix | Size |
+|:------:|:----:|
+|$X$|$n \times d$|
+|$y$|$n \times h$|
+|$W$|$d \times h$|
+
+For all the instances, according to the result of the equation @eq:softmaxM and to the set of features $X$, the predicted values are given by:
+$$
+p(c | X) = softmax(XW)
+$$ {#eq:predsoft}
+
+We can compute the cross-entropy between our predictions and the real values.
+The cross-entropy give us the difference between two distributions of probability.
+If we have two distributions $P$ and $Q$, the cross-entropy is given by $H(P, Q) = - \sum_i P(x) log Q(x)$
+
+As the labels $y$ are on one-hot form, we can considerate that $y$ give us a distribution of probability because, due to the definition of $y_i$ on one-hot encoding form, we have for each instance $i$ the result below: $\sum_k y_{ik} = 1$.
+So for the labels $y$ on one-hot form and for our predictions $p(c | X)$, we have the cross entropy which give us:
+
+$$
+\begin{aligned}
+H(y, p(c | X)) &= -\sum_i^n y_i log(p(c|x_i))^T \\
+&= -\sum_i^n log(softmax(x_iW))y^T \\
+\end{aligned}
+$$ {#eq:h}
+
+As the cross-entropy is the difference between two distributions, we want to minimise this cross-entropy because we want that our predictions are equal to the real values $y$.
+
+So we want to find an optimal $W$ that minimise equation @eq:h.
+
+As we want to use a gradient descent to find the optimal $W$, we are searching for the gradient of the cross-entropy @eq:h.
+
+First, we want to compute the partial derivate $\frac{\partial}{\partial w_k}$ of the cross-entropy:
+$$
+\begin{aligned}
+\frac{\partial}{\partial w_k} H(y, p(c|X))
+&= -\sum_i^n \frac{\partial}{\partial w_k} log(softmax(x_iW))y_i^T \\
+&= -\sum_i^n \frac{\partial}{\partial w_k} log(softmax(W, x_i, j)) & \text{with} \ y_{ij} = 1 \\
+&= -\sum_i^n \frac{\partial}{\partial w_k} log\left(\frac{e^{x_iw_j}}{\sum_{l = 1}^h e^{x_iw_l}}\right) \\
+&= -\sum_i^n \frac{\partial}{\partial w_k} \left(x_iw_j - log\left(\sum_{l = 1}^h e^{x_iw_l}\right)\right) \\
+&= \sum_i^n \left( \frac{\partial log\left(\sum_{l = 1}^h e^{x_iw_l}\right)}{\partial \sum_{l = 1}^h e^{x_iw_l}} \frac{\partial \sum_{l = 1}^h e^{x_iw_l}}{\partial w_k} - \frac{\partial}{\partial w_k} x_iw_j \right) \\
+&= \sum_i^n \left( \frac{e^{x_iw_k} x_i^T}{\sum_{l = 1}^h e^{x_iw_l}} - y_{ik} x_i^T \right) \\
+&= \sum_i^n \left(softmax(W, x_i, k) - y_{ik} \right)x_i^T \\
+\end{aligned}
+$$ {#eq:partial}
+
+So the gradient of the cross-entropy is given by:
+
+$$
+\begin{aligned}
+\nabla_W H(y, p(c | X)) &=
+\begin{bmatrix} \frac{\partial }{\partial w_1} H(y, p(c | X)) & \cdots & \frac{\partial }{\partial w_h} H(y, p(c | X)) \end{bmatrix} \\
+&= \begin{bmatrix} \sum_i^n \left( softmax(W, x_i, 1) - y_{i1} \right)x_i^T & \cdots & \sum_i^n \left( softmax(W, x_i, h) - y_{ih} \right)x_i^T \end{bmatrix} \\
+&= \begin{bmatrix} \sum_i^n \left( softmax(x_iW) - y_i \right)x_i^T \end{bmatrix} \\
+\end{aligned}
+$$
+
+Here we can constate that the gradient give us the features multiply by the error between what we predict ($softmax$) and the real values ($y$).
+If the error is big, the $x_i$ will have more weight in the computation of the gradient.
+
+So we can compute the optimal $W$ thanks to a gradient descent:
+
+$$
+\begin{aligned}
+W^{i + 1} &= W^{i} - \eta \nabla_W H(y, p(c | X)) \\
+&= W^i - \eta \sum_i^n (softmax(x_iW) - y_i)x_i^T
+\end{aligned}
+$$
