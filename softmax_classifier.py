@@ -41,11 +41,10 @@ class Softmax(Classifier):
         y_tilde = np.zeros((y.shape[0], len(np.unique(y))))
         y_tilde[np.arange(y.shape[0]), y] = 1
 
-        loss = np.sum(
-                y_tilde * (np.log(np.exp(X @ self.W @ np.ones((num_classes, 1)))) - X @ self.W)
-                )
+        softmax = lambda X, W: np.exp(X @ W) / np.sum(np.exp(X @ W), axis = 1).reshape(-1, 1)
+        
+        loss = - np.sum(np.log(softmax(X, self.W)) * y_tilde)
         loss /= num_train
-        print(loss)
 
         #############################################################################
         #                          END OF YOUR CODE                                 #
@@ -56,7 +55,9 @@ class Softmax(Classifier):
         # TODO: Compute the gradients and store the gradients in dW.                #
         # Don't forget the regularization!                                          #
         #############################################################################     
-        pass   
+        
+        dW = np.sum(X.T @ (softmax(X, self.W) - y_tilde), axis = 1)
+        dW /= num_train
 
         #############################################################################
         #                          END OF YOUR CODE                                 #

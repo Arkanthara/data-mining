@@ -355,17 +355,19 @@ $$ {#eq:predsoft}
 
 We can compute the cross-entropy between our predictions and the real values.
 The cross-entropy give us the difference between two distributions of probability.
-If we have two distributions $P$ and $Q$, the cross-entropy is given by $H(P, Q) = - \sum_i P(x) log Q(x)$
+If we have two distributions $P$ and $Q$, the cross-entropy is given by $H(P, Q) = - \frac{1}{m} \sum_x^m P(x) log Q(x)$
 
 As the labels $y$ are on one-hot form, we can considerate that $y$ give us a distribution of probability because, due to the definition of $y_i$ on one-hot encoding form, we have for each instance $i$ the result below: $\sum_k y_{ik} = 1$.
 So for the labels $y$ on one-hot form and for our predictions $p(c | X)$, we have the cross entropy which give us:
 
 $$
 \begin{aligned}
-H(y, p(c | X)) &= -\sum_i^n y_i log(p(c|x_i))^T \\
-&= -\sum_i^n log(softmax(x_iW))y^T \\
+H(y, p(c | X)) &= - \frac{1}{n} \sum_i^n y_i \odot log(p(c|x_i)) \\
+&= - \frac{1}{n} \sum_i^n log(softmax(x_iW)) \odot y \\
 \end{aligned}
 $$ {#eq:h}
+
+With $\odot$ the Hadamard product.
 
 As the cross-entropy is the difference between two distributions, we want to minimise this cross-entropy because we want that our predictions are equal to the real values $y$.
 
@@ -379,13 +381,13 @@ First, we want to compute the partial derivate $\frac{\partial}{\partial w_k}$ o
 $$
 \begin{aligned}
 \frac{\partial}{\partial w_k} H(y, p(c|X))
-&= -\sum_i^n \frac{\partial}{\partial w_k} log(softmax(x_iW))y_i^T \\
-&= -\sum_i^n \frac{\partial}{\partial w_k} log(softmax(W, x_i, j)) & \text{with} \ y_{ij} = 1 \\
-&= -\sum_i^n \frac{\partial}{\partial w_k} log\left(\frac{e^{x_iw_j}}{\sum_{l = 1}^h e^{x_iw_l}}\right) \\
-&= -\sum_i^n \frac{\partial}{\partial w_k} \left(x_iw_j - log\left(\sum_{l = 1}^h e^{x_iw_l}\right)\right) \\
-&= \sum_i^n \left( \frac{\partial log\left(\sum_{l = 1}^h e^{x_iw_l}\right)}{\partial \sum_{l = 1}^h e^{x_iw_l}} \frac{\partial \sum_{l = 1}^h e^{x_iw_l}}{\partial w_k} - \frac{\partial}{\partial w_k} x_iw_j \right) \\
-&= \sum_i^n \left( \frac{e^{x_iw_k} x_i^T}{\sum_{l = 1}^h e^{x_iw_l}} - y_{ik} x_i^T \right) \\
-&= \sum_i^n \left(softmax(W, x_i, k) - y_{ik} \right)x_i^T \\
+&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log(softmax(x_iW))\odot y_i \\
+&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log(softmax(W, x_i, j)) & \text{with} \ y_{ij} = 1 \\
+&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log\left(\frac{e^{x_iw_j}}{\sum_{l = 1}^h e^{x_iw_l}}\right) \\
+&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} \left(x_iw_j - log\left(\sum_{l = 1}^h e^{x_iw_l}\right)\right) \\
+&=  \frac{1}{n} \sum_i^n \left( \frac{\partial log\left(\sum_{l = 1}^h e^{x_iw_l}\right)}{\partial \sum_{l = 1}^h e^{x_iw_l}} \frac{\partial \sum_{l = 1}^h e^{x_iw_l}}{\partial w_k} - \frac{\partial}{\partial w_k} x_iw_j \right) \\
+&=  \frac{1}{n} \sum_i^n \left( \frac{e^{x_iw_k} x_i^T}{\sum_{l = 1}^h e^{x_iw_l}} - y_{ik} x_i^T \right) \\
+&=  \frac{1}{n} \sum_i^n \left(softmax(W, x_i, k) - y_{ik} \right)x_i^T \\
 \end{aligned}
 $$ {#eq:partial}
 
@@ -395,8 +397,8 @@ $$
 \begin{aligned}
 \nabla_W H(y, p(c | X)) &=
 \begin{bmatrix} \frac{\partial }{\partial w_1} H(y, p(c | X)) & \cdots & \frac{\partial }{\partial w_h} H(y, p(c | X)) \end{bmatrix} \\
-&= \begin{bmatrix} \sum_i^n \left( softmax(W, x_i, 1) - y_{i1} \right)x_i^T & \cdots & \sum_i^n \left( softmax(W, x_i, h) - y_{ih} \right)x_i^T \end{bmatrix} \\
-&= \begin{bmatrix} \sum_i^n \left( softmax(x_iW) - y_i \right)x_i^T \end{bmatrix} \\
+&= \begin{bmatrix}  \frac{1}{n} \sum_i^n \left( softmax(W, x_i, 1) - y_{i1} \right)x_i^T & \cdots &  \frac{1}{n} \sum_i^n \left( softmax(W, x_i, h) - y_{ih} \right)x_i^T \end{bmatrix} \\
+&= \begin{bmatrix}  \frac{1}{n} \sum_i^n \left( softmax(x_iW) - y_i \right)x_i^T \end{bmatrix} \\
 \end{aligned}
 $$
 
@@ -408,6 +410,6 @@ So we can compute the optimal $W$ thanks to a gradient descent:
 $$
 \begin{aligned}
 W^{i + 1} &= W^{i} - \eta \nabla_W H(y, p(c | X)) \\
-&= W^i - \eta \sum_i^n (softmax(x_iW) - y_i)x_i^T
+&= W^i - \eta  \frac{1}{n} \sum_i^n (softmax(x_iW) - y_i)x_i^T
 \end{aligned}
 $$
