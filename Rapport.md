@@ -125,9 +125,11 @@ And we want to maximize the probability for all instances and not only for insta
 So we want to maximize:
 $$
 \begin{aligned}
-\text{max arg}_w \sum_i^n p(y_i | x_i)
+\text{max arg}_w \frac{1}{n} \sum_i^n p(y_i | x_i)
 \end{aligned}
 $$ {#eq:total}
+
+The $\frac{1}{n}$ allow us to normalize our datas, to have an answer in the space definition of $p(y_i | x_i)$.
 
 We want to use the gradient descent. So we want to have something to minimise.
 As we have to maximize the equation @eq:prob, we only have to invert this equation to have a minimisation problem.
@@ -151,12 +153,12 @@ So we have according to equation @eq:total:
 
 $$
 \begin{aligned}
-\text{max arg}_w \sum_i^n p(y_i | x_i)
-&= \text{min arg}_w \frac{1}{\sum_i^n p(y_i | x_i)}\\
-&= \text{min arg}_w \sum_i^n\frac{1}{\sigma(x_iw)^{y_i}(1 - \sigma(x_iw))^{1 - y_i}} \\
-&= \text{min arg}_w \ log\left(\sum_i^n\frac{1}{\sigma(x_iw)^{y_i}(1 - \sigma(x_iw))^{1 - y_i}}\right) \\
-&= \text{min arg}_w \sum_i^n\left(- log(\sigma(x_iw)^{y_i}(1 - \sigma(x_iw))^{1 - y_i}) \right) \\
-&= \text{min arg}_w \sum_i^n\left( -y_ilog(\sigma(x_iw)) - (1 - y_i)log(1 - \sigma(x_iw)) \right)
+\text{max arg}_w \frac{1}{n} \sum_i^n p(y_i | x_i)
+&= \text{min arg}_w \frac{1}{n} \sum_i^n \frac{1}{p(y_i | x_i)}\\
+&= \text{min arg}_w \frac{1}{n} \sum_i^n\frac{1}{\sigma(x_iw)^{y_i}(1 - \sigma(x_iw))^{1 - y_i}} \\
+&= \text{min arg}_w \frac{1}{n} \ log\left(\sum_i^n\frac{1}{\sigma(x_iw)^{y_i}(1 - \sigma(x_iw))^{1 - y_i}}\right) \\
+&= \text{min arg}_w \frac{1}{n} \sum_i^n\left(- log(\sigma(x_iw)^{y_i}(1 - \sigma(x_iw))^{1 - y_i}) \right) \\
+&= \text{min arg}_w \frac{1}{n} \sum_i^n\left( -y_ilog(\sigma(x_iw)) - (1 - y_i)log(1 - \sigma(x_iw)) \right)
 \end{aligned}
 $$ {#eq:cost}
 
@@ -169,8 +171,8 @@ As $y$ has a size of $n \times h$, $X$ a size of $n \times d$ and $w$ a size of 
 
 $$
 \begin{aligned}
-\text{min arg}_w \sum_i^n\left( -log(\sigma(x_iw))y_i - log(1 - \sigma(x_iw))(1 - y_i) \right) \\
-= \text{min arg}_w \left( -y^Tlog(\sigma(Xw)) - (1 - y^T)log(1 - \sigma(Xw)) \right) \\
+\text{min arg}_w \frac{1}{n} \sum_i^n\left( -log(\sigma(x_iw))y_i - log(1 - \sigma(x_iw))(1 - y_i) \right) \\
+= \text{min arg}_w \frac{1}{n} \left( -y^Tlog(\sigma(Xw)) - (1 - y^T)log(1 - \sigma(Xw)) \right) \\
 &= NLL(X, y)
 \end{aligned}
 $$ {#eq:prod}
@@ -202,15 +204,15 @@ So according to the chain rule, we have:
 $$
 \begin{aligned}
 \frac{\partial}{\partial w_k} NLL(X, y)
-&= \frac{\partial}{\partial w_k} \left( -y^Tlog(\sigma(Xw)) - (1 - y^T)log(1 - \sigma(Xw)) \right)\\
-&= -y^T \frac{\partial}{\partial w_k}log(\sigma(Xw)) - (1 - y^T)\frac{\partial}{\partial w_k}log(1 - \sigma(Xw)) \\
-&= -y^T \frac{\partial log(\sigma(Xw))}{\partial \sigma} \frac{\partial \sigma}{\partial Xw} \frac{\partial Xw}{\partial w_k} \\
-&\ \ \ - (1 - y^T)\frac{\partial log(1 - \sigma(Xw))}{\partial (1 - \sigma(Xw))} \frac{\partial (1 - \sigma(Xw))}{\partial \sigma} \frac{\partial \sigma(Xw)}{\partial Xw}  \frac{\partial Xw}{\partial w_k} \\
-&= -y^T \frac{1}{\sigma(Xw))} \sigma(Xw)(1 - \sigma(Xw)) X_{:,k} \\
-&\ \ \ -(1 - y^T)\frac{1}{1 - \sigma(Xw)}(-1)\sigma(Xw)(1 - \sigma(Xw)) X_{:, k} \\
-&= ((1 - y^T)\sigma(Xw) -y^T (1 - \sigma(Xw))) X_{:, k} \\
-&= (\sigma(Xw) -y^T\sigma(Xw) -y^T 1_{n, 1} + y^T\sigma(Xw)) X_{:, k} \\
-&= \left(\sigma(Xw)  - \sum_i^n y_i \right)X_{:, k}\\
+&= \frac{1}{n} \left( \frac{\partial}{\partial w_k} \left( -y^Tlog(\sigma(Xw)) - (1 - y^T)log(1 - \sigma(Xw)) \right)\right)\\
+&= \frac{1}{n} \left( -y^T \frac{\partial}{\partial w_k}log(\sigma(Xw)) - (1 - y^T)\frac{\partial}{\partial w_k}log(1 - \sigma(Xw))\right) \\
+&= \frac{1}{n} \left( -y^T \frac{\partial log(\sigma(Xw))}{\partial \sigma} \frac{\partial \sigma}{\partial Xw} \frac{\partial Xw}{\partial w_k} \right. \\
+&\ \ \ \left.- (1 - y^T)\frac{\partial log(1 - \sigma(Xw))}{\partial (1 - \sigma(Xw))} \frac{\partial (1 - \sigma(Xw))}{\partial \sigma} \frac{\partial \sigma(Xw)}{\partial Xw}  \frac{\partial Xw}{\partial w_k}\right) \\
+&= \frac{1}{n} \left( -y^T \frac{1}{\sigma(Xw)} \sigma(Xw)(1 - \sigma(Xw)) X_{:,k}\right. \\
+&\ \ \ \left. -(1 - y^T)\frac{1}{1 - \sigma(Xw)}(-1)\sigma(Xw)(1 - \sigma(Xw)) X_{:, k} \right)\\
+&= \frac{1}{n} \left( ((1 - y^T)\sigma(Xw) -y^T (1 - \sigma(Xw))) X_{:, k} \right)\\
+&= \frac{1}{n} \left( (\sigma(Xw) -y^T\sigma(Xw) -y^T 1_{n, 1} + y^T\sigma(Xw)) X_{:, k}\right) \\
+&= \frac{1}{n} \left( \left(\sigma(Xw)  - \sum_i^n y_i \right)X_{:, k}\right)\\
 \end{aligned}
 $$ {#eq:grad}
 
@@ -235,214 +237,7 @@ with $\eta$ the learning rate.
 
 ## Multinomial case
 
-We have $h$ classes $c_1, \cdots, c_h \in C$.
-
-If $y_i = c_k \in C$, we define $\tilde{y}_i$ a vector of size $1 \times h$ like this:
-
-$$
-\tilde{y}_{ij} = \left\{
-\begin{aligned}
-1 & \ \text{if} j = k \\
-0 & \ \text{else}
-\end{aligned}
-\right.
-$$ {#eq:tildey}
-
-So we have for instance $\tilde{y}_i = \begin{bmatrix} 0 & 0 & 1 & 0 \end{bmatrix}$ if $h = 4$.
-
-Now, we note $y_i = \tilde{y}_i$. So $y$ is of size $n \times h$.
-
-We have for each $k \in [1, h]$ that the probability that $y_{ik} = 1$ or $0$ depends on $x_i$.
-
-So we have:
-
-$$p(y_{ik} | x_i) = h_k(x_i)$$ {#eq:1}
-
-Thus, we have:
-
-$$
-p(y_{i} | x_i) = \prod_{k = 1}^h p(y_{ik} | x_i)^{y_{ik}}
-$$ {#eq:2}
-
-But what is the function $h_k(x_i)$ ? Is it the sigmoid function ?
-
-No, it's not the sigmoid function, because this function work only for two variables.
-So we want a function like the sigmoid function that works for more than two variables, that's why, we'd try to generalize the sigmoid function to more than one variable
-
-If we remember the equation @eq:sigma, we have (binary case):
-$$
-\begin{aligned}
-p(y_i = 1 | x_i) 
-&= \frac{e^{x_iw}}{e^{x_iw} + 1} \\
-\end{aligned}
-$$ {#eq:3}
-
-Now, we suppose that we have
-$$
-W = \begin{bmatrix} w_1 & \cdots & w_h \end{bmatrix}
-$$ {#eq:w}
-with each parameter $w_k$ defined specially for the class $k$. (Note that the size of $w_k$ is $d \times 1$, so the size of $W$ is $d \times h$)
-
-In binary case, we can define $W = \begin{bmatrix} w_1 & w_2 \end{bmatrix}$, with $w_1$ a column vector of $0$.
-
-So we can write the equation @eq:3 like this:
-
-$$
-\begin{aligned}
-p(y_i = 1 | x_i) 
-&= \frac{e^{x_iw_2}}{e^{x_iw_2} + e^0} \\
-&= \frac{e^{x_iw_2}}{e^{x_iw_2} + e^{x_iw_1}} \\
-&= \frac{e^{x_iw_2}}{\sum_{k = 1}^2 e^{x_iw_k}} \\
-&= \frac{e^{x_iw_2}}{\sum_{k = 1}^h e^{x_iw_k}} \\
-\end{aligned}
-$$ {#eq:4}
-
-So if we have $h$ classes, we can define a function like this:
-
-$$
-\begin{aligned}
-p(y_{ik} = 1 | x_i)
-&= \frac{e^{x_iw_k}}{\sum_{j = 1}^{h} e^{x_iw_j}} \\
-&= \frac{e^{x_iw_k}}{\sum_{j = 1}^{h} (e^{x_iW})_{1, j}} \\
-&= softmax(W, x_i, k)
-\end{aligned}
-$$ {#eq:softmax}
-
-We can easily see that $softmax$ is between $0$ and $1$:
-As the exponential function is always positive, we have that:
-
-$$
-\begin{aligned}
-&0 &< e^{x_iw_k} &< e^{x_iw_k} + \sum_{j \neq k}^h e^{x_iw_j} \\
-\Leftrightarrow \ \ \ &0 &< e^{x_iw_k} &< \sum_{j = 1}^h e^{x_iw_j} \\
-\Leftrightarrow \ \ \ &0 &< e^{x_iw_k} &< \sum_{j = 1}^h e^{x_iw_j} \\
-\Leftrightarrow \ \ \ &0 &< \frac{e^{x_iw_k}}{\sum_{j = 1}^h e^{x_iw_j}} &< 1 \\
-\Leftrightarrow \ \ \ &0 &< softmax(W, x_i, k) &< 1 \\
-\end{aligned}
-$$ {#eq:softzeros}
-
-So thanks to equation @eq:softmax, we have:
-
-$$
-\begin{aligned}
-p(y_{i} | x_i) &= \prod_{k = 1}^h p(y_{ik} = 1 | x_i)^{y_{ik}} \\
-&= \prod_{k = 1}^h softmax(W, x_i, k)^{y_{ik}} \\
-\end{aligned}
-$$ {#eq:probsoft}
-
-### Cost function
-
-Now, as for the logistic regression, we want to find a cost function that maximise $p(y_{i} |x_i)$ for each instance.
-So we want to maximise the likelihood.
-According to equation @eq:softmax and equation @eq:softzeros, we have that $p(y_i |x_i) \neq 0$.
-
-And we also want to use the gradient descent to optimize the parameter $W$, so we need a cost function to minimise.
-
-We want to use the logarith likelihood, because we have exponentials in softmax, so it will facilitate the derivate of the cost function.
-As we use the likelihood and as we want to maximise this function, we want to minimise the inverse of likelihood.
-However, we have $log\left(\frac{1}{f(x)}\right) = -log(f(x))$.
-
-So we define the cost function as the negative logarithm likelihood function, and we want to minimise this function for all the instances.
-
-So we have:
-$$
-\begin{aligned}
-\arg \min_{W} NLL(W, X, y)
-&= \arg \min_{W} \sum_i^n NLL(W, x_i, y_i) \\
-&= \arg \min_{W} \sum_i^n -log(p(y_i | x_i)) \\
-&= \arg \min_{W} - \sum_i^n log\left(\prod_{k = 1}^h softmax(W, x_i, k)^{y_{ik}}\right) \\
-&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h log\left(softmax(W, x_i, k)^{y_{ik}}\right) \\
-&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(softmax(W, x_i, k)\right) \\
-&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(\frac{e^{x_iw_k}}{\sum_{j = 1}^{h} (e^{x_iW})_{1, j}}\right) \\
-&= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} \left(x_iw_k - log\left(\sum_{j = 1}^{h} (e^{x_iW})_{1, j}\right) \right) \\
-&= \arg \min_{W}  \sum_i^n \sum_{k = 1}^h y_{ik} \left(log\left(\sum_{j = 1}^{h} (e^{x_iW})_{1, j}\right) - x_iw_k \right) \\
-&= \arg \min_{W}  \sum_k^h  y_{:, k}^T \left(log\left(e^{XW} 1_{h, 1}\right) - Xw_k \right)\\
-\end{aligned}
-$$ {#eq:nll}
-
-
-
-
-We want to explain how we transform the function $NLL(W, X, y)$ to a matrix product.
-We use $1_{x, y}$ to indicate that we use a matrix of ones of size $x \times y$.
-Note that we have $W$ defined in equation @eq:w and that:
-
-| Matrix | Size |
-|:------:|:----:|
-|$X$|$n \times d$|
-|$y$|$n \times h$|
-|$W$|$d \times h$|
-
-So if we look at the sizes, we have:
-$$
-\begin{aligned}
-NLL(W, X, y) &=  y_{:, k}^T \left(log\left(e^{XW} 1_{h, 1}\right) - Xw_k \right) \\
-&= (n\times 1)^T \times \left( n \times d \times d \times h \times h \times 1 - n \times d \times d \times 1) \right) \\
-&= 1 \times n \times \left( n \times 1 - n \times 1 \right) \\
-&= 1 \times n \times n \times 1\\
-&= 1  \\
-&= scalar
-\end{aligned}
-$$
-
-
-### Gradient
-
-We want to find the gradient of the $NLL$ function obtained in equation @eq:nll.
-
-We have for one instance:
-
-$$
-\begin{aligned}
-\frac{\partial }{\partial w_s} NLL(W, x_i, y_i)
-&=\frac{\partial }{\partial w_s} \sum_{k = 1}^h y_{ik} \left(log\left(\sum_{j = 1}^{h} e^{x_iw_j}\right) - x_iw_k \right) \\
-&=\sum_{k = 1}^h y_{ik} \left(\frac{\partial log\left(\sum_{j = 1}^{h} e^{x_iw_j}\right) }{\partial \sum_{j = 1}^{h} e^{x_iw_j}}\frac{\partial \sum_{j = 1}^{h} e^{x_iw_j}}{\partial w_s} - \frac{\partial }{\partial w_s} x_iw_k \right) \\
-&=\sum_{k = 1}^h y_{ik} \left(\frac{x_ie^{x_iw_s}}{\sum_{j = 1}^{h} e^{x_iw_j}} - y_{is}x_i \right) \\
-&=\sum_{k = 1}^h y_{ik} x_i \left(\frac{e^{x_iw_s}}{\sum_{j = 1}^{h} e^{x_iw_j}} - y_{is} \right) \\
-&=\sum_{k = 1}^h y_{ik} x_i \left(softmax(W, x_i, s) - y_{is} \right) \\
-\end{aligned}
-$$
-
-Here, we have the term $- x_i$ only if $s = t$ for $y_{it} = 1$, that's why I make $y_{is}x_i$ because $y_{is} = 1$ only if $s = t$ because of the equation @eq:tildey which define $y$.
-
-
-So for all instances, we have:
-
-$$
-\begin{aligned}
-\frac{\partial }{\partial w_s} NLL(W, X, y)
-&= \sum_i^n \frac{\partial }{\partial w_s} NLL(W, x_i, y_i) \\
-&= \sum_i^n \sum_{k = 1}^h y_{ik} x_i \left(softmax(W, x_i, s) - y_{is} \right) \\
-&= \sum_{k = 1}^h y_{:,k}^T \left(X \odot \left(softmax(W, X, s) - y_{:, s} \right)\right) \\
-\end{aligned}
-$$
-
-With $\odot$ a special product between a matrix $A$ of size $n \times d$ and a vector $B$ of size $n \times 1$, defined like this:
-$$ (A \odot B)_{ij} = A_{ij} \cdot B_i$$ {#eq:odot}
-
-So we define the gradient like this:
-
-$$
-\begin{aligned}
-\nabla_{W} NLL(W, X, y) &=
-\begin{bmatrix}
-\frac{\partial}{\partial w_1} NLL(W, X, y) &
-\cdots &
-\frac{\partial}{\partial w_h} NLL(W, X, y) &
-\end{bmatrix}
-\end{aligned}
-$$
-
-So we can make a gradient descent to find the optimal $W$:
-
-$$W^{i + 1} = W^i - \eta \nabla_{W}NLL(W, X, y)$$ {#eq:gd}
-
-with $\eta$ the learning rate.
-
-
-## Softmax
-
-We have $h$ classes.
+Now, we have $h$ classes.
 
 If $y_i = class_k$, we define $\tilde{y}_i$ a vector of size $1 \times h$ like this:
 
@@ -577,6 +372,8 @@ As the cross-entropy is the difference between two distributions, we want to min
 So we want to find an optimal $W$ that minimise equation @eq:h.
 
 As we want to use a gradient descent to find the optimal $W$, we are searching for the gradient of the cross-entropy @eq:h.
+
+### Gradient
 
 First, we want to compute the partial derivate $\frac{\partial}{\partial w_k}$ of the cross-entropy:
 $$
