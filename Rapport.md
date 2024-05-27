@@ -356,7 +356,7 @@ $$
 &= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} log\left(\frac{e^{x_iw_k}}{\sum_{j = 1}^{h} (e^{x_iW})_{1, j}}\right) \\
 &= \arg \min_{W} - \sum_i^n \sum_{k = 1}^h y_{ik} \left(x_iw_k - log\left(\sum_{j = 1}^{h} (e^{x_iW})_{1, j}\right) \right) \\
 &= \arg \min_{W}  \sum_i^n \sum_{k = 1}^h y_{ik} \left(log\left(\sum_{j = 1}^{h} (e^{x_iW})_{1, j}\right) - x_iw_k \right) \\
-&= \arg \min_{W}  \sum_k^h 1_{1, h} y^T \left(log\left(e^{XW} 1_{h, 1}\right) - Xw_k \right) 1_{h, 1} \\
+&= \arg \min_{W}  \sum_k^h  y_{:, k}^T \left(log\left(e^{XW} 1_{h, 1}\right) - Xw_k \right)\\
 \end{aligned}
 $$ {#eq:nll}
 
@@ -376,8 +376,8 @@ Note that we have $W$ defined in equation @eq:w and that:
 So if we look at the sizes, we have:
 $$
 \begin{aligned}
-NLL(W, X, y) &=  1_{1, h} y^T \left(log\left(e^{XW} 1_{h, 1}\right) - Xw_k \right) \\
-&= 1 \times h \times (n\times h)^T \times \left( n \times d \times d \times h \times h \times 1 - n \times d \times d \times 1) \right) \times h \times 1 \\
+NLL(W, X, y) &=  y_{:, k}^T \left(log\left(e^{XW} 1_{h, 1}\right) - Xw_k \right) \\
+&= (n\times 1)^T \times \left( n \times d \times d \times h \times h \times 1 - n \times d \times d \times 1) \right) \\
 &= 1 \times n \times \left( n \times 1 - n \times 1 \right) \\
 &= 1 \times n \times n \times 1\\
 &= 1  \\
@@ -390,22 +390,51 @@ $$
 
 We want to find the gradient of the $NLL$ function obtained in equation @eq:nll.
 
-We have:
+We have for one instance:
 
 $$
 \begin{aligned}
-\frac{\partial}{\partial w_k} NLL(W, X, y)
-&= \frac{\partial}{\partial w_k} \sum_i^h 1_{1, h} y^T \left(log\left(\sum_j^h e^{Xw_j} \right) - Xw_i \right) 1_{h, 1} \\
-&= \sum_i^h 1_{1, h} y^T \left(\frac{\partial log\left(\sum_j^h e^{Xw_j} \right) }{\partial \sum_j^h e^{Xw_j}}\frac{\partial \sum_j^h e^{Xw_j}}{\partial w_k} - \frac{\partial}{\partial w_k} Xw_i \right) 1_{h, 1} \\
-\text{case}\ i = k: \\
-&= \sum_i^h 1_{1, h} y^T \left(\frac{X^Te^{Xw_k}}{\sum_j^h e^{Xw_j}} -  X \right) \\
-&= \sum_i^h 1_{1, h} y^T \left(\frac{e^{Xw_k}}{\sum_j^h e^{Xw_j}} -  1 \right) X  \\
-&= \sum_i^h 1_{1, h} y^T \left(softmax(W, X, k) -  1 \right) X  \\
-\text{case}\ i \neq k: \\
-&= \sum_i^h 1_{1, h} y^T \left(\frac{X^Te^{Xw_k}}{\sum_j^h e^{Xw_j}}\right) \\
-&= \sum_i^h 1_{1, h} y^T softmax(W, X, k)X \\
-\text{So general case}: \\
-&= \sum_i^h 1_{1, h} y^T \left(softmax(W, X, k) -  y_{:, k} \right) X  \\
-\text{case}\ i \neq k: \\
+\frac{\partial }{\partial w_s} NLL(W, x_i, y_i)
+&=\frac{\partial }{\partial w_s} \sum_{k = 1}^h y_{ik} \left(log\left(\sum_{j = 1}^{h} e^{x_iw_j}\right) - x_iw_k \right) \\
+&=\sum_{k = 1}^h y_{ik} \left(\frac{\partial log\left(\sum_{j = 1}^{h} e^{x_iw_j}\right) }{\partial \sum_{j = 1}^{h} e^{x_iw_j}}\frac{\partial \sum_{j = 1}^{h} e^{x_iw_j}}{\partial w_s} - \frac{\partial }{\partial w_s} x_iw_k \right) \\
+&=\sum_{k = 1}^h y_{ik} \left(\frac{x_ie^{x_iw_s}}{\sum_{j = 1}^{h} e^{x_iw_j}} - y_{is}x_i \right) \\
+&=\sum_{k = 1}^h y_{ik} x_i \left(\frac{e^{x_iw_s}}{\sum_{j = 1}^{h} e^{x_iw_j}} - y_{is} \right) \\
+&=\sum_{k = 1}^h y_{ik} x_i \left(softmax(W, x_i, s) - y_{is} \right) \\
 \end{aligned}
 $$
+
+Here, we have the term $- x_i$ only if $s = t$ for $y_{it} = 1$, that's why I make $y_{is}x_i$ because $y_{is} = 1$ only if $s = t$ because of the equation @eq:tildey which define $y$.
+
+
+So for all instances, we have:
+
+$$
+\begin{aligned}
+\frac{\partial }{\partial w_s} NLL(W, X, y)
+&= \sum_i^n \frac{\partial }{\partial w_s} NLL(W, x_i, y_i) \\
+&= \sum_i^n \sum_{k = 1}^h y_{ik} x_i \left(softmax(W, x_i, s) - y_{is} \right) \\
+&= \sum_{k = 1}^h y_{:,k}^T \left(X \odot \left(softmax(W, X, s) - y_{:, s} \right)\right) \\
+\end{aligned}
+$$
+
+With $\odot$ a special product between a matrix $A$ of size $n \times d$ and a vector $B$ of size $n \times 1$, defined like this:
+$$ (A \odot B)_{ij} = A_{ij} \cdot B_i$$ {#eq:odot}
+
+So we define the gradient like this:
+
+$$
+\begin{aligned}
+\nabla_{W} NLL(W, X, y) &=
+\begin{bmatrix}
+\frac{\partial}{\partial w_1} NLL(W, X, y) &
+\cdots &
+\frac{\partial}{\partial w_h} NLL(W, X, y) &
+\end{bmatrix}
+\end{aligned}
+$$
+
+So we can make a gradient descent to find the optimal $W$:
+
+$$W^{i + 1} = W^i - \eta \nabla_{W}NLL(W, X, y)$$ {#eq:gd}
+
+with $\eta$ the learning rate.
