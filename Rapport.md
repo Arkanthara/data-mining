@@ -177,9 +177,22 @@ $$
 \end{aligned}
 $$ {#eq:prod}
 
+We want that the cost function avoid the overfitting.
+
+To do that, we add a condition on the parameter $w$: we want that the $L_2$ norm of this parameter is as small as possible.
+It force the $w$ parameter to don't take too big values.
+And we define a new parameter $reg$ to control the force of the constraint on $w$.
+
+It's the Ridge regularization.
+
+So the cost function is, according to equation @eq:prod:
+
+$$ J(X, y, w) = NLL + reg \cdot  \lVert w \rVert_2^2 $$ {#eq:costsigmoid}
+
+
 ### Gradient
 
-Now we have to compute the derivate of the cost function @eq:prod.
+Now we have to compute the derivate of the cost function @eq:costsigmoid.
 
 First, we want to find the derivate of the sigmoid function.
 
@@ -203,34 +216,34 @@ $$ {#eq:gradsig}
 So according to the chain rule, we have:
 $$
 \begin{aligned}
-\frac{\partial}{\partial w_k} NLL(X, y)
-&= \frac{1}{n} \left( \frac{\partial}{\partial w_k} \left( -y^Tlog(\sigma(Xw)) - (1 - y^T)log(1 - \sigma(Xw)) \right)\right)\\
-&= \frac{1}{n} \left( -y^T \frac{\partial}{\partial w_k}log(\sigma(Xw)) - (1 - y^T)\frac{\partial}{\partial w_k}log(1 - \sigma(Xw))\right) \\
+\frac{\partial}{\partial w_k} J(X, y, w) &= \frac{\partial}{\partial w_k} NLL(X, y) + \frac{\partial}{\partial w_k} reg \cdot \lVert w \rVert_2^2 \\
+&= \frac{1}{n} \left( \frac{\partial}{\partial w_k} \left( -y^Tlog(\sigma(Xw)) - (1 - y^T)log(1 - \sigma(Xw)) \right)\right) + 2\cdot reg \cdot |w_k| \\
+&= \frac{1}{n} \left( -y^T \frac{\partial}{\partial w_k}log(\sigma(Xw)) - (1 - y^T)\frac{\partial}{\partial w_k}log(1 - \sigma(Xw))\right)  + 2\cdot reg \cdot |w_k| \\
 &= \frac{1}{n} \left( -y^T \frac{\partial log(\sigma(Xw))}{\partial \sigma} \frac{\partial \sigma}{\partial Xw} \frac{\partial Xw}{\partial w_k} \right. \\
-&\ \ \ \left.- (1 - y^T)\frac{\partial log(1 - \sigma(Xw))}{\partial (1 - \sigma(Xw))} \frac{\partial (1 - \sigma(Xw))}{\partial \sigma} \frac{\partial \sigma(Xw)}{\partial Xw}  \frac{\partial Xw}{\partial w_k}\right) \\
+&\ \ \ \left.- (1 - y^T)\frac{\partial log(1 - \sigma(Xw))}{\partial (1 - \sigma(Xw))} \frac{\partial (1 - \sigma(Xw))}{\partial \sigma} \frac{\partial \sigma(Xw)}{\partial Xw}  \frac{\partial Xw}{\partial w_k}\right)  + 2\cdot reg \cdot |w_k| \\
 &= \frac{1}{n} \left( -y^T \frac{1}{\sigma(Xw)} \sigma(Xw)(1 - \sigma(Xw)) X_{:,k}\right. \\
-&\ \ \ \left. -(1 - y^T)\frac{1}{1 - \sigma(Xw)}(-1)\sigma(Xw)(1 - \sigma(Xw)) X_{:, k} \right)\\
-&= \frac{1}{n} \left( ((1 - y^T)\sigma(Xw) -y^T (1 - \sigma(Xw))) X_{:, k} \right)\\
-&= \frac{1}{n} \left( (\sigma(Xw) -y^T\sigma(Xw) -y^T 1_{n, 1} + y^T\sigma(Xw)) X_{:, k}\right) \\
-&= \frac{1}{n} \left( \left(\sigma(Xw)  - \sum_i^n y_i \right)X_{:, k}\right)\\
+&\ \ \ \left. -(1 - y^T)\frac{1}{1 - \sigma(Xw)}(-1)\sigma(Xw)(1 - \sigma(Xw)) X_{:, k} \right) + 2\cdot reg \cdot |w_k| \\
+&= \frac{1}{n} \left( ((1 - y^T)\sigma(Xw) -y^T (1 - \sigma(Xw))) X_{:, k} \right) + 2\cdot reg \cdot |w_k| \\
+&= \frac{1}{n} \left( (\sigma(Xw) -y^T\sigma(Xw) -y^T 1_{n, 1} + y^T\sigma(Xw)) X_{:, k}\right)  + 2\cdot reg \cdot |w_k| \\
+&= \frac{1}{n} \left( \left(\sigma(Xw)  - \sum_i^n y_i \right)X_{:, k}\right) + 2\cdot reg \cdot |w_k| \\
 \end{aligned}
 $$ {#eq:grad}
 
 So the gradient of the cost function give us:
 
 $$
-\nabla NLL(X, y) = 
+\nabla J(X, y, w) = 
 \begin{bmatrix}
-\frac{\partial}{\partial w_0} NLL(X, y) \\
+\frac{\partial}{\partial w_0} J(X, y, w) \\
 \vdots \\
-\frac{\partial}{\partial w_d} NLL(X, y) \\
+\frac{\partial}{\partial w_d} J(X, y, w) \\
 \end{bmatrix}
 $$
 
 Now, we have to make a gradient descent:
 
 $$
-w^{i+ 1} = w^{i} - \eta \nabla NLL(X, y)
+w^{i+ 1} = w^{i} - \eta \nabla J(W, y, w)
 $$ {#eq:graddesc}
 
 with $\eta$ the learning rate.
@@ -367,40 +380,53 @@ H(y, p(c | X)) &= - \frac{1}{n} \sum_i^n y_i \odot log(p(c|x_i)) \\
 \end{aligned}
 $$ {#eq:h}
 
-With $\odot$ the Hadamard product.
+with $\odot$ the Hadamard product: $(A \odot B)_{ij} = A_{ij} \cdot B_{ij}$
 
 As the cross-entropy is the difference between two distributions, we want to minimise this cross-entropy because we want that our predictions are equal to the real values $y$.
 
 So we want to find an optimal $W$ that minimise equation @eq:h.
 
-As we want to use a gradient descent to find the optimal $W$, we are searching for the gradient of the cross-entropy @eq:h.
+But we also want that the trained model avoid overfitting.
+So we add to the cost function the sum of the $L_2$ norm of the parameters $w_{j}$ to add a penality on big values of $W$.
+It's a constraint on the parameter $W$ that allow us to control overfitting.
+We also add the $reg$ parameter to control the force of the constraint.
+
+So the final cost function to minimize is:
+$$
+J(X, y, W) = - \frac{1}{n} \sum_i^n log(softmax(x_iW)) \odot y + reg \sum_j^h \lVert w_j \rVert_2^2
+$$ {#eq:costsoft}
+
+This regularization is called the Ridge regularization and allow to avoid overfitting by trying to have $W$ as small as possible.
+
+As we want to use a gradient descent to find the optimal $W$, we are searching for the gradient of the cost function  @eq:cost.
 
 ### Gradient
 
-First, we want to compute the partial derivate $\frac{\partial}{\partial w_k}$ of the cross-entropy:
+First, we want to compute the partial derivate $\frac{\partial}{\partial w_k}$ of the cost function:
 $$
 \begin{aligned}
-\frac{\partial}{\partial w_k} H(y, p(c|X))
-&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log(softmax(x_iW))\odot y_i \\
-&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log(softmax(W, x_i, j)) & \text{with} \ y_{ij} = 1 \\
-&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log\left(\frac{e^{x_iw_j}}{\sum_{l = 1}^h e^{x_iw_l}}\right) \\
-&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} \left(x_iw_j - log\left(\sum_{l = 1}^h e^{x_iw_l}\right)\right) \\
-&=  \frac{1}{n} \sum_i^n \left( \frac{\partial \sum_{l = 1}^h e^{x_iw_l}}{\partial w_k} \frac{\partial log\left(\sum_{l = 1}^h e^{x_iw_l}\right)}{\partial \sum_{l = 1}^h e^{x_iw_l}} - \frac{\partial}{\partial w_k} x_iw_j \right) \\
-&=  \frac{1}{n} \sum_i^n \left( \frac{ x_i^Te^{x_iw_k}}{\sum_{l = 1}^h e^{x_iw_l}} - x_i^T y_{ik} \right) \\
-&=  \frac{1}{n} \sum_i^n x_i^T \left(softmax(W, x_i, k) - y_{ik} \right) \\
+\frac{\partial}{\partial w_k} J(X, y, W)
+&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log(softmax(x_iW))\odot y_i  + \frac{\partial}{\partial w_k}  reg \sum_j^h \lVert w_j \rVert_2^2 \\
+&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log(softmax(W, x_i, j)) + 2\cdot reg \cdot \lVert w_k \rVert_2 & \text{with} \ y_{ij} = 1 \\
+&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log\left(\frac{e^{x_iw_j}}{\sum_{l = 1}^h e^{x_iw_l}}\right) + 2\cdot reg \cdot \lVert w_k \rVert_2 \\
+&= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} \left(x_iw_j - log\left(\sum_{l = 1}^h e^{x_iw_l}\right)\right) + 2\cdot reg \cdot \lVert w_k \rVert_2 \\
+&=  \frac{1}{n} \sum_i^n \left( \frac{\partial \sum_{l = 1}^h e^{x_iw_l}}{\partial w_k} \frac{\partial log\left(\sum_{l = 1}^h e^{x_iw_l}\right)}{\partial \sum_{l = 1}^h e^{x_iw_l}} - \frac{\partial}{\partial w_k} x_iw_j \right) + 2\cdot reg \cdot \lVert w_k \rVert_2 \\
+&=  \frac{1}{n} \sum_i^n \left( \frac{ x_i^Te^{x_iw_k}}{\sum_{l = 1}^h e^{x_iw_l}} - x_i^T y_{ik} \right) + 2\cdot reg \cdot \lVert w_k \rVert_2 \\
+&=  \frac{1}{n} \sum_i^n x_i^T \left(softmax(W, x_i, k) - y_{ik} \right) + 2\cdot reg \cdot \lVert w_k \rVert_2 \\
 \end{aligned}
 $$ {#eq:partial}
 
-So the gradient of the cross-entropy is given by:
+So the gradient of the cost function is given by:
 
 $$
 \begin{aligned}
-\nabla_W H(y, p(c | X)) &=
-\begin{bmatrix} \frac{\partial }{\partial w_1} H(y, p(c | X)) & \cdots & \frac{\partial }{\partial w_h} H(y, p(c | X)) \end{bmatrix} \\
-&= \begin{bmatrix}  \frac{1}{n} x_i^T \sum_i^n \left( softmax(W, x_i, 1) - y_{i1} \right)& \cdots &  \frac{1}{n} \sum_i^n x_i^T \left( softmax(W, x_i, h) - y_{ih} \right)\end{bmatrix} \\
-&= \begin{bmatrix}  \frac{1}{n} \sum_i^n x_i^T\left( softmax(x_iW) - y_i \right) \end{bmatrix} \\
+\nabla_W J(X, y, W) &=
+\begin{bmatrix} \frac{\partial }{\partial w_1} J(X, y, W) & \cdots & \frac{\partial }{\partial w_h} J(X, y, W) \end{bmatrix} \\
+&= \begin{bmatrix}  \frac{1}{n} \sum_i^n x_i^T\left( softmax(x_iW) - y_i \right) + 2 \cdot reg \cdot \lVert W \rVert_2 \end{bmatrix} \\
 \end{aligned}
 $$
+
+with $\lVert W \rVert_2 = \begin{bmatrix} \lVert w_1 \rVert_2 & \cdots & \lVert w_h \rVert_2 \end{bmatrix}$
 
 Here we can constate that the gradient give us the features multiply by the error between what we predict ($softmax$) and the real values ($y$).
 If the error is big, the $x_i$ will have more weight in the computation of the gradient.
@@ -409,7 +435,7 @@ So we can compute the optimal $W$ thanks to a gradient descent:
 
 $$
 \begin{aligned}
-W^{i + 1} &= W^{i} - \eta \nabla_W H(y, p(c | X)) \\
-&= W^i - \eta  \frac{1}{n} \sum_i^n x_i^T(softmax(x_iW) - y_i)
+W^{i + 1} &= W^{i} - \eta \nabla_W J(X, y, W)\\
+&= W^i - \eta  \left( \frac{1}{n} \sum_i^n x_i^T(softmax(x_iW) - y_i) + 2 \cdot reg \cdot W \right)
 \end{aligned}
 $$
