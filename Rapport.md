@@ -385,9 +385,9 @@ $$
 &= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log(softmax(W, x_i, j)) & \text{with} \ y_{ij} = 1 \\
 &= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} log\left(\frac{e^{x_iw_j}}{\sum_{l = 1}^h e^{x_iw_l}}\right) \\
 &= - \frac{1}{n} \sum_i^n \frac{\partial}{\partial w_k} \left(x_iw_j - log\left(\sum_{l = 1}^h e^{x_iw_l}\right)\right) \\
-&=  \frac{1}{n} \sum_i^n \left( \frac{\partial log\left(\sum_{l = 1}^h e^{x_iw_l}\right)}{\partial \sum_{l = 1}^h e^{x_iw_l}} \frac{\partial \sum_{l = 1}^h e^{x_iw_l}}{\partial w_k} - \frac{\partial}{\partial w_k} x_iw_j \right) \\
-&=  \frac{1}{n} \sum_i^n \left( \frac{e^{x_iw_k} x_i^T}{\sum_{l = 1}^h e^{x_iw_l}} - y_{ik} x_i^T \right) \\
-&=  \frac{1}{n} \sum_i^n \left(softmax(W, x_i, k) - y_{ik} \right)x_i^T \\
+&=  \frac{1}{n} \sum_i^n \left( \frac{\partial \sum_{l = 1}^h e^{x_iw_l}}{\partial w_k} \frac{\partial log\left(\sum_{l = 1}^h e^{x_iw_l}\right)}{\partial \sum_{l = 1}^h e^{x_iw_l}} - \frac{\partial}{\partial w_k} x_iw_j \right) \\
+&=  \frac{1}{n} \sum_i^n \left( \frac{ x_i^Te^{x_iw_k}}{\sum_{l = 1}^h e^{x_iw_l}} - x_i^T y_{ik} \right) \\
+&=  \frac{1}{n} \sum_i^n x_i^T \left(softmax(W, x_i, k) - y_{ik} \right) \\
 \end{aligned}
 $$ {#eq:partial}
 
@@ -397,8 +397,8 @@ $$
 \begin{aligned}
 \nabla_W H(y, p(c | X)) &=
 \begin{bmatrix} \frac{\partial }{\partial w_1} H(y, p(c | X)) & \cdots & \frac{\partial }{\partial w_h} H(y, p(c | X)) \end{bmatrix} \\
-&= \begin{bmatrix}  \frac{1}{n} \sum_i^n \left( softmax(W, x_i, 1) - y_{i1} \right)x_i^T & \cdots &  \frac{1}{n} \sum_i^n \left( softmax(W, x_i, h) - y_{ih} \right)x_i^T \end{bmatrix} \\
-&= \begin{bmatrix}  \frac{1}{n} \sum_i^n \left( softmax(x_iW) - y_i \right)x_i^T \end{bmatrix} \\
+&= \begin{bmatrix}  \frac{1}{n} x_i^T \sum_i^n \left( softmax(W, x_i, 1) - y_{i1} \right)& \cdots &  \frac{1}{n} \sum_i^n x_i^T \left( softmax(W, x_i, h) - y_{ih} \right)\end{bmatrix} \\
+&= \begin{bmatrix}  \frac{1}{n} \sum_i^n x_i^T\left( softmax(x_iW) - y_i \right) \end{bmatrix} \\
 \end{aligned}
 $$
 
@@ -410,6 +410,6 @@ So we can compute the optimal $W$ thanks to a gradient descent:
 $$
 \begin{aligned}
 W^{i + 1} &= W^{i} - \eta \nabla_W H(y, p(c | X)) \\
-&= W^i - \eta  \frac{1}{n} \sum_i^n (softmax(x_iW) - y_i)x_i^T
+&= W^i - \eta  \frac{1}{n} \sum_i^n x_i^T(softmax(x_iW) - y_i)
 \end{aligned}
 $$
