@@ -22,7 +22,8 @@ class Softmax(Classifier):
         # TODO: Compute the scores and store them in scores.                        #
         #############################################################################
 
-        scores = np.exp(X @ self.W) / (np.exp(X @ self.W) @ np.ones((num_classes, 1)))
+        #scores = np.exp(X @ self.W) / (np.exp(X @ self.W) @ np.ones((num_classes, 1)))
+        scores = X @ self.W
 
         #############################################################################
         #                          END OF YOUR CODE                                 #
@@ -41,9 +42,9 @@ class Softmax(Classifier):
         y_tilde = np.zeros((y.shape[0], len(np.unique(y))))
         y_tilde[np.arange(y.shape[0]), y] = 1
 
-        softmax = lambda X, W: np.exp(X @ W) / np.sum(np.exp(X @ W), axis = 1).reshape(-1, 1)
-        
-        loss = - np.sum(np.log(softmax(X, self.W)) * y_tilde)
+        softmax = lambda z: np.exp(z - np.max(z)) / np.sum(np.exp(z - np.max(z)), axis = 1).reshape(-1, 1)
+     
+        loss = - np.sum(np.log(softmax(scores)) * y_tilde) + reg * np.sum(self.W**2)
         loss /= num_train
 
         #############################################################################
@@ -56,7 +57,7 @@ class Softmax(Classifier):
         # Don't forget the regularization!                                          #
         #############################################################################     
         
-        dW = np.sum(X.T @ (softmax(X, self.W) - y_tilde), axis = 1)
+        dW = X.T @ (softmax(scores) - y_tilde) + 2 * reg * self.W
         dW /= num_train
 
         #############################################################################
@@ -72,7 +73,9 @@ class Softmax(Classifier):
         # TODO:                                                                   #
         # Implement this method. Store the predicted labels in y_pred.            #
         ###########################################################################
-        pass
+        
+        softmax = lambda X, W: np.exp(X @ W - np.max(X)) / np.sum(np.exp(X @ W - np.max(X)), axis = 1).reshape(-1, 1)
+        y_pred = np.argmax(softmax(X, self.W), axis = 1)
 
         ###########################################################################
         #                           END OF YOUR CODE                              #

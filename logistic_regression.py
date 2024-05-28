@@ -29,10 +29,9 @@ class Logistic(Classifier):
         #############################################################################
         # TODO: Compute the scores and store them in scores.                        #
         #############################################################################
-        sigmoid = lambda z: 1/(1 + np.exp(-z))
-
-        scores = sigmoid(X @ self.W)
-
+    
+        scores = X @ self.W
+    
         #############################################################################
         #                          END OF YOUR CODE                                 #
         #############################################################################
@@ -48,8 +47,10 @@ class Logistic(Classifier):
         #############################################################################
         y = y.reshape(-1, 1)
         
-        loss = float(- y.T @ np.log(sigmoid(X @ self.W))
-                     - (np.ones_like(y.T) - y.T) @ np.log(np.ones_like(y) - sigmoid(X @ self.W))
+        sigmoid = lambda z: 1/(1 + np.exp(-z))
+
+        loss = float(- y.T @ np.log(sigmoid(scores))
+                     - (np.ones_like(y.T) - y.T) @ np.log(np.ones_like(y) - sigmoid(scores))
                      + reg * np.sum(self.W **2))
         loss /= num_train
 
@@ -90,5 +91,5 @@ class Logistic(Classifier):
         ###########################################################################
         #                           END OF YOUR CODE                              #
         ###########################################################################
-        return y_pred
+        return y_pred[:, 0]
 
