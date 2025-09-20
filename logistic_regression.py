@@ -45,13 +45,11 @@ class Logistic(Classifier):
         # If you are not careful here, it is easy to run into numeric instability.  #
         # Don't forget the regularization!                                          #
         #############################################################################
-        y = y.reshape(-1, 1)
+        #y = y.reshape(-1, 1)
         
-        sigmoid = lambda z: 1/(1 + np.exp(-z))
+        sigmoid = lambda z: (1/(1 + np.exp(-z)))[:, 0]
 
-        loss = float(- y.T @ np.log(sigmoid(scores))
-                     - (np.ones_like(y.T) - y.T) @ np.log(np.ones_like(y) - sigmoid(scores))
-                     + reg * np.sum(self.W **2))
+        loss = np.sum(- y * np.log(sigmoid(scores)) - (1 - y) * np.log(1 - sigmoid(scores))) + reg * np.sum(self.W **2)
         loss /= num_train
 
 
@@ -64,8 +62,10 @@ class Logistic(Classifier):
         # TODO: Compute the gradients and store the gradients in dW.                #
         # Don't forget the regularization!                                          #
         #############################################################################     
-        
-        dW = X.T @ (sigmoid(X @ self.W) - y) + 2 * reg * self.W
+      
+        pred = sigmoid(scores)[:, None]
+
+        dW = X.T @ (pred - y[:, None]) + 2 * reg * self.W
         dW /= num_train
         
         
